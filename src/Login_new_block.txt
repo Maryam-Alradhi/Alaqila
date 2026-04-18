@@ -1,0 +1,14 @@
+      if (mode === "login") {
+        await login(email.trim(), password);
+        showToast("مرحباً بعودتك! 👋", "success");
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL as string;
+        if (adminEmail && email.trim().toLowerCase() === adminEmail.toLowerCase()) {
+          navigate("/manage-store-aqeela");
+        } else {
+          navigate("/shop");
+        }
+      } else {
+        await register(name.trim(), email.trim(), password);
+        showToast("تم إنشاء حسابك 🎉", "success");
+        navigate("/shop");
+      }

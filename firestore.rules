@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // المنتجات — أي زائر يقرأ، الأدمن فقط يكتب
+    match /products/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // الطلبات — أي أحد يقدر يكتب طلب (زوار + مسجلين)، القراءة للكل (عشان تتبع الطلب)
+    match /orders/{id} {
+      allow read:   if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+
+    // المستخدمين
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if request.auth != null;
+    }
+
+    // الإعدادات — قراءة للكل، كتابة للأدمن
+    match /settings/{id} {
+      allow read:  if true;
+      allow write: if request.auth != null;
+    }
+
+    // معاملات الولاء
+    match /loyaltyTransactions/{id} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}
