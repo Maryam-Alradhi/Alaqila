@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc,
   doc, serverTimestamp,
@@ -16,6 +17,8 @@ const CATEGORIES = [
 
 const RING_SIZES = ["15","16","17","18","19","20","21","22","23","24","25"];
 
+export type CustomField = { label: string; required: boolean };
+
 const emptyForm = {
   name: "", price: "", category: "rings", description: "",
   image: "", video: "",
@@ -28,7 +31,7 @@ const emptyForm = {
 };
 
 // ── Image Upload Component ──────────────────────────────────
-function ImageUploader({ value, onChange, label }: { value: string; onChange: (url: string) => void; label: string }) {
+export function ImageUploader({ value, onChange, label }: { value: string; onChange: (url: string) => void; label: string }) {
   const [uploading, setUploading]   = useState(false);
   const [progress,  setProgress]    = useState(0);
   const [dragOver,  setDragOver]    = useState(false);
@@ -362,13 +365,13 @@ export default function ManageProducts() {
       </div>
 
       {/* ── Form Modal ── */}
-      {showForm && (
+      {showForm && createPortal(
         <>
           <div onClick={() => setShowForm(false)}
             style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", backdropFilter:"blur(10px)", zIndex:500 }} />
-          <div style={{ position:"fixed", inset:0, zIndex:501, display:"flex", alignItems:"center", justifyContent:"center", padding:"16px" }}>
+          <div style={{ position:"fixed", inset:0, zIndex:501, overflowY:"auto", padding:"40px 16px" }}>
             <div onClick={e => e.stopPropagation()}
-              style={{ background:"#0a0d1a", border:"1px solid rgba(212,175,55,0.25)", borderRadius:"22px", padding:"28px 24px", width:"100%", maxWidth:"560px", maxHeight:"92vh", overflowY:"auto", direction:"rtl", boxShadow:"0 32px 80px rgba(0,0,0,0.8)" }}>
+              style={{ background:"#0a0d1a", border:"1px solid rgba(212,175,55,0.25)", borderRadius:"22px", padding:"28px 24px", width:"100%", maxWidth:"560px", margin:"0 auto", direction:"rtl", boxShadow:"0 32px 80px rgba(0,0,0,0.8)" }}>
 
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"22px" }}>
                 <h3 style={{ color:"var(--gold)", margin:0, fontSize:"16px", fontWeight:"800" }}>
@@ -400,7 +403,7 @@ export default function ManageProducts() {
 
                 <div>
                   <label style={lbl}>الفئة / القسم</label>
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="inp" style={{ background:"#0B0F1A" }}>
+                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value, hasSizes: e.target.value === "rings" }))} className="inp" style={{ background:"#0B0F1A" }}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
@@ -441,17 +444,19 @@ export default function ManageProducts() {
                   </div>
                 </div>
 
-                {/* Stock type */}
-                <div style={{ display:"flex", gap:"10px" }}>
-                  {[true, false].map(v => (
-                    <button key={String(v)} onClick={() => setForm(f => ({ ...f, hasSizes: v }))}
-                      style={{ flex:1, padding:"10px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.hasSizes===v?"var(--gold)":"var(--border)"}`, background:form.hasSizes===v?"var(--gold-dim)":"transparent", color:form.hasSizes===v?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"13px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
-                      {v ? "💍 بمقاسات" : "📦 بكمية فقط"}
-                    </button>
-                  ))}
-                </div>
+                {/* Stock type — sizes only apply to rings */}
+                {form.category === "rings" && (
+                  <div style={{ display:"flex", gap:"10px" }}>
+                    {[true, false].map(v => (
+                      <button key={String(v)} onClick={() => setForm(f => ({ ...f, hasSizes: v }))}
+                        style={{ flex:1, padding:"10px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.hasSizes===v?"var(--gold)":"var(--border)"}`, background:form.hasSizes===v?"var(--gold-dim)":"transparent", color:form.hasSizes===v?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"13px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
+                        {v ? "💍 بمقاسات" : "📦 بكمية فقط"}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-                {form.hasSizes ? (
+                {form.category === "rings" && form.hasSizes ? (
                   <div>
                     <label style={lbl}>كميات المقاسات</label>
                     <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:"8px", marginTop:"6px" }}>
@@ -472,6 +477,10 @@ export default function ManageProducts() {
                     <input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} className="inp" dir="ltr" />
                   </div>
                 )}
+
+                <p style={{ color:"var(--text-muted)", fontSize:"11px", background:"rgba(184,150,46,0.04)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius-sm)", padding:"10px 12px" }}>
+                  💡 خدمة التخصيص (النقش والصور المخصصة) تُدار الآن من قسم <strong style={{ color:"var(--gold)" }}>🎨 التخصيص</strong> في القائمة الجانبية.
+                </p>
               </div>
 
               <div style={{ display:"flex", gap:"10px", marginTop:"22px" }}>
@@ -483,7 +492,8 @@ export default function ManageProducts() {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

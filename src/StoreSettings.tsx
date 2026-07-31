@@ -7,7 +7,6 @@ const DEFAULT_CATEGORIES = [
   { value: "rings",    label: "خواتم",  icon: "💍" },
   { value: "necklace", label: "سلاسل",  icon: "📿" },
   { value: "bracelet", label: "أساور",  icon: "✨" },
-  { value: "other",    label: "أخرى",   icon: "🌟" },
 ];
 
 export default function StoreSettings() {
@@ -24,12 +23,15 @@ export default function StoreSettings() {
     loyaltyPercent: "5",      // % من قيمة الطلب يُضاف كرصيد
     loyaltyEnabled: true,     // تفعيل نظام الرصيد
     loyaltyMinOrder: "0",     // حد أدنى للطلب لكسب الرصيد
+    couponEnabled: false,     // تفعيل كود الخصم
+    couponCode: "",           // كود الخصم (كود واحد فعّال بنفس الوقت)
+    couponDiscount: "0",      // قيمة الخصم الثابتة (BD)
   });
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [newCat, setNewCat]     = useState({ value:"", label:"", icon:"🏷️" });
   const [loading, setLoading]   = useState(true);
   const [saving,  setSaving]    = useState(false);
-  const [tab,     setTab]       = useState<"general"|"delivery"|"loyalty"|"categories">("general");
+  const [tab,     setTab]       = useState<"general"|"delivery"|"loyalty"|"coupon"|"categories">("general");
 
   useEffect(() => {
     (async () => {
@@ -84,6 +86,7 @@ export default function StoreSettings() {
     { key:"general",    label:"🏪 عام" },
     { key:"delivery",   label:"🚗 توصيل" },
     { key:"loyalty",    label:"💰 الرصيد" },
+    { key:"coupon",     label:"🎟️ كود الخصم" },
     { key:"categories", label:"🏷️ الأقسام" },
   ];
 
@@ -178,6 +181,38 @@ export default function StoreSettings() {
                 <p style={{ color:"var(--text)", fontSize:"13px", margin:0 }}>
                   طلب بقيمة <span style={{ color:"var(--gold)", fontWeight:"700" }}>10.000 BD</span> → رصيد مكتسب: <span style={{ color:"#22c55e", fontWeight:"700" }}>{(10 * Number(form.loyaltyPercent||0)/100).toFixed(3)} BD</span>
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Coupon */}
+      {tab === "coupon" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"14px" }}>
+          <div className="card" style={{ padding:"20px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"16px" }}>
+              <p className="section-title" style={{ margin:0 }}>🎟️ كود الخصم</p>
+              <div onClick={() => f("couponEnabled", !form.couponEnabled)}
+                style={{ width:"44px", height:"24px", borderRadius:"99px", background:form.couponEnabled?"var(--gold)":"var(--border)", cursor:"pointer", position:"relative", transition:"var(--transition)", flexShrink:0 }}>
+                <div style={{ position:"absolute", top:"3px", [form.couponEnabled?"right":"left"]:"3px", width:"18px", height:"18px", borderRadius:"50%", background:form.couponEnabled?"#000":"var(--text-muted)", transition:"var(--transition)" }} />
+              </div>
+            </div>
+
+            <div style={{ background:"rgba(212,175,55,0.06)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius-sm)", padding:"12px 14px", marginBottom:"14px" }}>
+              <p style={{ color:"var(--text-muted)", fontSize:"12px", margin:0, lineHeight:1.6 }}>
+                كود خصم واحد فعّال بنفس الوقت. العميل يدخله بصفحة السلة، ويُخصم مبلغ ثابت من الإجمالي.
+              </p>
+            </div>
+
+            <div style={{ display:"flex", flexDirection:"column", gap:"12px", opacity:form.couponEnabled?1:0.4, pointerEvents:form.couponEnabled?"auto":"none" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+                <Field label="الكود" hint="مثال: AQ-2025">
+                  <input className="inp" value={form.couponCode} onChange={e => f("couponCode", e.target.value.toUpperCase())} dir="ltr" />
+                </Field>
+                <Field label="قيمة الخصم (BD)">
+                  <input className="inp" type="number" value={form.couponDiscount} onChange={e => f("couponDiscount", e.target.value)} min="0" dir="ltr" />
+                </Field>
               </div>
             </div>
           </div>

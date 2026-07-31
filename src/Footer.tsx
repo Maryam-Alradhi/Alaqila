@@ -7,13 +7,13 @@ export default function Footer() {
 
   return (
     <footer style={{
-      background: "#080b14",
-      borderTop: "1px solid #1a1a1a",
-      padding: "40px 20px 24px",
+      background: "var(--bg-2)",
+      borderTop: "1px solid var(--gold-border)",
+      padding: "48px 20px 26px",
       direction: "rtl",
       marginTop: "60px",
     }}>
-      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Top row */}
         <div style={{
           display: "grid",
@@ -23,10 +23,10 @@ export default function Footer() {
         }}>
           {/* Brand */}
           <div>
-            <h3 style={{ color: "#D4AF37", fontSize: "20px", margin: "0 0 10px", fontWeight: "bold" }}>
+            <h3 className="font-display gold-shimmer" style={{ fontSize: "22px", margin: "0 0 10px", fontWeight: "700" }}>
               💍 العقيلة
             </h3>
-            <p style={{ color: "#555", fontSize: "13px", lineHeight: "1.7", margin: 0 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "13px", lineHeight: "1.7", margin: 0 }}>
               أفخم الخواتم والإكسسوارات المختارة بعناية.
               نوصل لكل البحرين 🇧🇭
             </p>
@@ -34,7 +34,7 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h4 style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 14px" }}>
+            <h4 style={{ color: "var(--text-dim)", fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 14px" }}>
               روابط سريعة
             </h4>
             {[
@@ -46,9 +46,9 @@ export default function Footer() {
               <div
                 key={path}
                 onClick={() => navigate(path)}
-                style={{ color: "#666", fontSize: "13px", padding: "4px 0", cursor: "pointer", transition: "color 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#D4AF37")}
-                onMouseLeave={e => (e.currentTarget.style.color = "#666")}
+                style={{ color: "var(--text-muted)", fontSize: "13px", padding: "4px 0", cursor: "pointer", transition: "var(--transition)" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "var(--gold)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
               >
                 {label}
               </div>
@@ -57,7 +57,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 14px" }}>
+            <h4 style={{ color: "var(--text-dim)", fontSize: "12px", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 14px" }}>
               تواصل معنا
             </h4>
             <a
@@ -81,7 +81,7 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div style={{
-          borderTop: "1px solid #151515",
+          borderTop: "1px solid var(--border)",
           paddingTop: "20px",
           display: "flex",
           justifyContent: "space-between",
@@ -89,10 +89,10 @@ export default function Footer() {
           flexWrap: "wrap",
           gap: "10px",
         }}>
-          <p style={{ color: "#333", fontSize: "12px", margin: 0 }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "12px", margin: 0, opacity: 0.6 }}>
             © {new Date().getFullYear()} العقيلة — جميع الحقوق محفوظة
           </p>
-          <p style={{ color: "#333", fontSize: "12px", margin: 0 }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "12px", margin: 0, opacity: 0.6 }}>
             صُنع بـ ❤️ في البحرين 🇧🇭
           </p>
         </div>

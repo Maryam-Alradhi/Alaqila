@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, query, where, getDocs, doc, updateDoc, getDoc, writeBatch, increment } from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
 
@@ -20,6 +20,20 @@ const statusColors: Record<string,string> = {
   delivered:"#8b5cf6", collected:"#8b5cf6", rejected:"#ef4444",
 };
 
+// ── شرح عام لمراحل الطلب — يظهر بس بالحالة الأولية قبل أي بحث ──
+const explainerSteps = [
+  { icon:"✅", label:"تم استلام الطلب" },
+  { icon:"🚚", label:"قيد التجهيز" },
+  { icon:"📦", label:"تم الشحن" },
+  { icon:"📝", label:"تم التسليم" },
+];
+const trustFeatures = [
+  { icon:"🎧", title:"دعم على مدار الساعة", desc:"فريق الدعم جاهز لمساعدتك 24/7" },
+  { icon:"🔒", title:"دفع آمن",              desc:"جميع عمليات الدفع مشفرة 100%" },
+  { icon:"🚚", title:"شحن سريع",             desc:"توصيل طلبك بسرعة في جميع أنحاء البحرين" },
+  { icon:"💎", title:"جودة مضمونة",          desc:"ضمان على جميع المنتجات" },
+];
+
 function TrackOrder() {
   const { orderNumber } = useParams();
   const navigate = useNavigate();
@@ -30,15 +44,17 @@ function TrackOrder() {
   const [searchVal,  setSearchVal]  = useState(orderNumber || "");
   const [cancelling, setCancelling] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [searched,   setSearched]   = useState(!!orderNumber);
 
   const fetchOrder = async (num: string) => {
     if (!num.trim()) return;
+    setSearched(true);
     setLoading(true); setNotFound(false); setOrder(null); setShowInvoice(false);
     try {
-      const q = query(collection(db,"orders"), where("orderNumber","==",num.trim().toUpperCase()));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const orderData = { id:snap.docs[0].id, ...snap.docs[0].data() };
+      // ✅ جلب مباشر بمعرّف الطلب (مو استعلام) — يمنع أي شخص من سرد كل الطلبات
+      const snap = await getDoc(doc(db,"orders",num.trim().toUpperCase()));
+      if (snap.exists()) {
+        const orderData: any = { id:snap.id, ...snap.data() };
         setOrder(orderData);
         // Auto-show invoice when completed
         const isDone = orderData.status === "delivered" || orderData.status === "collected";
@@ -58,25 +74,10 @@ function TrackOrder() {
     if (!window.confirm("هل أنت متأكد من إلغاء الطلب؟")) return;
     setCancelling(true);
     try {
-      const batch = writeBatch(db);
-      // Update order status to rejected
-      batch.update(doc(db,"orders",order.id), { status: "rejected" });
-      // Restore stock for each item
-      for (const item of (order.items || [])) {
-        if (!item?.id) continue;
-        const snap = await getDoc(doc(db,"products",item.id));
-        if (!snap.exists()) continue;
-        const data: any = snap.data() || {};
-        const size = typeof item.selectedSize === "string" ? item.selectedSize : null;
-        const ref = doc(db,"products",item.id);
-        if (data.sizes && size && data.sizes[size] !== undefined)
-          batch.update(ref, { [`sizes.${size}`]: increment(item.quantity || 0) });
-        else
-          batch.update(ref, { quantity: increment(item.quantity || 0) });
-      }
-      await batch.commit();
+      // ✅ الكمية ما تُخصم من المخزون إلا وقت ما الأدمن يؤكد الطلب، فطلب لسا "قيد المراجعة" ما يحتاج إرجاع كمية
+      await updateDoc(doc(db,"orders",order.id), { status: "rejected" });
       setOrder({ ...order, status: "rejected" });
-      showToast("تم إلغاء الطلب وإعادة الكمية للمخزون ✅", "info");
+      showToast("تم إلغاء الطلب ✅", "info");
     } catch {
       showToast("فشل الإلغاء، حاول مجدداً ❌", "error");
     } finally {
@@ -88,29 +89,98 @@ function TrackOrder() {
   const currentIdx = order ? steps.findIndex(s => s.key === order.status) : -1;
   const isDone = order?.status === "delivered" || order?.status === "collected";
   const canCancel = order?.status === "pending";
+  const isIdle = !searched && !loading && !order && !notFound;
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", padding:"40px 16px", direction:"rtl" }}>
-      <div style={{ maxWidth:"520px", margin:"0 auto" }}>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", direction:"rtl" }}>
 
-        <h1 style={{ color:"var(--gold)", textAlign:"center", marginBottom:"28px", fontSize:"22px", fontWeight:"800" }}>
-          📦 تتبع طلبك
+      {/* Hero */}
+      <div style={{
+        position:"relative", overflow:"hidden", textAlign:"center",
+        padding:"70px 20px 50px",
+        background:"radial-gradient(ellipse at 50% 0%, rgba(184,150,46,0.12) 0%, transparent 65%)",
+        borderBottom:"1px solid var(--border)",
+      }}>
+        <span style={{ position:"absolute", top:"20%", left:"12%", color:"var(--gold)", fontSize:"18px", opacity:0.5 }}>✦</span>
+        <span style={{ position:"absolute", top:"65%", right:"10%", color:"var(--gold)", fontSize:"14px", opacity:0.4 }}>✦</span>
+
+        <div className="icon-badge-3d animate-glow" style={{
+          width:"76px", height:"76px", borderRadius:"50%",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:"32px", margin:"0 auto 20px",
+        }}>
+          📦
+        </div>
+        <h1 className="font-display gold-shimmer" style={{ fontSize:"clamp(26px,5vw,38px)", margin:"0 0 10px", fontWeight:"700" }}>
+          تتبع طلبك
         </h1>
+        <p style={{ color:"var(--text-muted)", fontSize:"14px", marginBottom:"30px" }}>
+          تابع حالة طلبك في كل خطوة حتى وصوله إليك
+        </p>
 
         {/* Search */}
-        <div style={{ display:"flex", gap:"10px", marginBottom:"28px" }}>
-          <input
-            placeholder="أدخل رقم الطلب (AQ-XXXXXX)"
-            value={searchVal}
-            onChange={e => setSearchVal(e.target.value)}
-            onKeyDown={e => e.key==="Enter" && fetchOrder(searchVal)}
-            className="inp"
-            dir="ltr"
-          />
-          <button onClick={() => fetchOrder(searchVal)} className="btn-gold" style={{ padding:"12px 18px", whiteSpace:"nowrap" }}>
+        <div style={{ display:"flex", gap:"10px", maxWidth:"460px", margin:"0 auto" }}>
+          <div style={{ position:"relative", flex:1 }}>
+            <span style={{ position:"absolute", top:"50%", left:"14px", transform:"translateY(-50%)", fontSize:"15px", opacity:0.6 }}>🔖</span>
+            <input
+              placeholder="أدخل رقم الطلب (AQ-XXXXXX)"
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              onKeyDown={e => e.key==="Enter" && fetchOrder(searchVal)}
+              className="inp"
+              dir="ltr"
+              style={{ paddingLeft:"38px" }}
+            />
+          </div>
+          <button onClick={() => fetchOrder(searchVal)} className="btn-gold btn-3d" style={{ padding:"12px 22px", whiteSpace:"nowrap" }}>
             بحث
           </button>
         </div>
+
+        <button onClick={() => navigate("/shop")} className="btn-ghost btn-3d" style={{ marginTop:"16px", padding:"11px 24px" }}>
+          ← العودة للمتجر
+        </button>
+      </div>
+
+      {/* Idle explainer — process steps + trust features */}
+      {isIdle && (
+        <>
+          <div style={{ padding:"56px 20px 0", maxWidth:"920px", margin:"0 auto" }}>
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", gap:"0", flexWrap:"wrap" }}>
+              {explainerSteps.map((step, idx) => (
+                <div key={step.label} style={{ display:"flex", alignItems:"flex-start", flex:"1 1 120px", minWidth:"110px" }}>
+                  <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
+                    <div className="icon-badge-3d" style={{ width:"52px", height:"52px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"22px", animationDelay:`${idx*0.3}s` }}>
+                      {step.icon}
+                    </div>
+                    <p style={{ color:"var(--text-dim)", fontSize:"13px", fontWeight:"600", marginTop:"12px", textAlign:"center" }}>{step.label}</p>
+                  </div>
+                  {idx < explainerSteps.length-1 && (
+                    <div style={{ flex:"0 0 auto", width:"100%", maxWidth:"60px", height:"2px", marginTop:"25px", background:"repeating-linear-gradient(90deg, var(--gold-border) 0 6px, transparent 6px 12px)" }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ padding:"56px 20px 70px", maxWidth:"1100px", margin:"0 auto" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:"18px" }}>
+              {trustFeatures.map(({ icon, title, desc }) => (
+                <div key={title} className="card" style={{ textAlign:"center" }}>
+                  <div className="icon-badge-3d" style={{ width:"48px", height:"48px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", margin:"0 auto 14px" }}>
+                    {icon}
+                  </div>
+                  <h3 style={{ color:"var(--gold)", fontSize:"14px", margin:"0 0 6px", fontWeight:"700" }}>{title}</h3>
+                  <p style={{ color:"var(--text-muted)", fontSize:"12px", margin:0, lineHeight:"1.7" }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Results */}
+      <div style={{ maxWidth:"520px", margin:"0 auto", padding: isIdle ? "0 16px" : "40px 16px" }}>
 
         {loading && (
           <div style={{ textAlign:"center", padding:"40px" }}>
@@ -204,11 +274,20 @@ function TrackOrder() {
                     {/* Items */}
                     <p style={{ color:"var(--text-muted)", fontSize:"11px", fontWeight:"700", margin:"0 0 8px" }}>المنتجات</p>
                     {(order.items || []).map((item: any, i: number) => (
-                      <div key={i} style={{ display:"flex", gap:"8px", alignItems:"center", padding:"7px 0", borderBottom:"1px solid var(--border)" }}>
-                        {item.image && <img src={item.image} alt="" style={{ width:"32px", height:"32px", objectFit:"cover", borderRadius:"6px", flexShrink:0 }} />}
-                        <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize && ` (م${item.selectedSize})`}</span>
-                        <span style={{ color:"var(--text-muted)", fontSize:"11px" }}>×{item.quantity}</span>
-                        <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price * item.quantity).toFixed(3)} BD</span>
+                      <div key={i} style={{ padding:"7px 0", borderBottom:"1px solid var(--border)" }}>
+                        <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+                          {item.image && <img src={item.image} alt="" style={{ width:"32px", height:"32px", objectFit:"cover", borderRadius:"6px", flexShrink:0 }} />}
+                          <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize && ` (م${item.selectedSize})`}</span>
+                          <span style={{ color:"var(--text-muted)", fontSize:"11px" }}>×{item.quantity}</span>
+                          <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price * item.quantity).toFixed(3)} BD</span>
+                        </div>
+                        {Array.isArray(item.customization) && item.customization.length > 0 && (
+                          <div style={{ marginTop:"6px", marginRight:"40px" }}>
+                            {item.customization.map((c:any,ci:number)=>(
+                              <p key={ci} style={{ color:"var(--gold)", fontSize:"11px", margin:0 }}>🎨 {c.label}: <span style={{ color:"var(--text-muted)" }}>{c.value}</span></p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
 
@@ -297,11 +376,20 @@ function TrackOrder() {
             <div className="card" style={{ padding:"18px" }}>
               <p className="section-title">تفاصيل الطلب</p>
               {(order.items||[]).map((item:any, i:number) => (
-                <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid var(--border)" }}>
-                  <span style={{ color:"var(--text-dim)", fontSize:"13px" }}>
-                    {item.name}{item.selectedSize&&` (م${item.selectedSize})`} × {item.quantity}
-                  </span>
-                  <span style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
+                <div key={i} style={{ padding:"6px 0", borderBottom:"1px solid var(--border)" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ color:"var(--text-dim)", fontSize:"13px" }}>
+                      {item.name}{item.selectedSize&&` (م${item.selectedSize})`} × {item.quantity}
+                    </span>
+                    <span style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
+                  </div>
+                  {Array.isArray(item.customization) && item.customization.length > 0 && (
+                    <div style={{ marginTop:"4px" }}>
+                      {item.customization.map((c:any,ci:number)=>(
+                        <p key={ci} style={{ color:"var(--gold)", fontSize:"11px", margin:0 }}>🎨 {c.label}: <span style={{ color:"var(--text-muted)" }}>{c.value}</span></p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               {order.deliveryFee>0 && (
@@ -345,10 +433,6 @@ function TrackOrder() {
 
           </div>
         )}
-
-        <button onClick={() => navigate("/shop")} className="btn-ghost" style={{ marginTop:"20px", width:"100%", padding:"11px" }}>
-          ← العودة للمتجر
-        </button>
       </div>
     </div>
   );

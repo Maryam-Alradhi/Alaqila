@@ -18,18 +18,18 @@ export default function NotFound() {
         <circle cx="50" cy="15" r="5" fill="#D4AF37"/>
       </svg>
 
-      <h1 style={{ color: "#D4AF37", fontSize: "clamp(64px,15vw,100px)", margin: 0, lineHeight: 1, fontWeight: "900" }}>
+      <h1 className="font-display" style={{ color: "#D4AF37", fontSize: "clamp(64px,15vw,100px)", margin: 0, lineHeight: 1, fontWeight: "900" }}>
         404
       </h1>
       <p style={{ color: "#888", fontSize: "18px", margin: "12px 0 6px" }}>هذه الصفحة غير موجودة</p>
       <p style={{ color: "#444", fontSize: "13px", marginBottom: "36px" }}>تأكد من الرابط أو عُد للرئيسية</p>
 
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
-        <button onClick={() => navigate("/")}
+        <button onClick={() => navigate("/")} className="btn-3d"
           style={{ padding: "12px 28px", background: "#D4AF37", border: "none", borderRadius: "12px", fontWeight: "bold", cursor: "pointer", fontSize: "14px", color: "#000" }}>
           الرئيسية 🏠
         </button>
-        <button onClick={() => navigate("/shop")}
+        <button onClick={() => navigate("/shop")} className="btn-3d"
           style={{ padding: "12px 28px", background: "transparent", border: "1px solid #333", borderRadius: "12px", cursor: "pointer", fontSize: "14px", color: "#aaa" }}>
           المتجر 🛍️
         </button>

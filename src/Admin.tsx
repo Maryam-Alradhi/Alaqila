@@ -5,12 +5,13 @@ import { db, auth } from "./firebase";
 import { useToast } from "./Toast";
 import { awardLoyaltyBalance } from "./LoyaltyService";
 import ManageProducts from "./ManageProducts";
+import CustomizationManager from "./CustomizationManager";
 import TelegramSettings from "./TelegramSettings";
 import StoreSettings from "./StoreSettings";
 import Customers from "./Customers";
 import Notifications from "./Notifications";
 
-type Tab = "orders"|"products"|"customers"|"stats"|"notifications"|"telegram"|"store";
+type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"telegram"|"store";
 type OrderStatus = "pending"|"confirmed"|"on_the_way"|"delivered"|"collected"|"rejected";
 
 const deliverySteps = ["pending","confirmed","on_the_way","delivered"];
@@ -33,6 +34,7 @@ const statusColors: Record<string,string> = {
 const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
   { key:"orders",        icon:"📦", label:"الطلبات",         group:"main" },
   { key:"products",      icon:"💍", label:"المنتجات",        group:"main" },
+  { key:"customization", icon:"🎨", label:"التخصيص",         group:"main" },
   { key:"customers",     icon:"👥", label:"العملاء",         group:"main" },
   { key:"notifications", icon:"🔔", label:"الإشعارات",       group:"main" },
   { key:"stats",         icon:"📊", label:"الإحصائيات",      group:"main" },
@@ -173,8 +175,8 @@ export default function Admin() {
         overflow:"hidden", position:"sticky", top:0, height:"100vh",
       }}>
         <div style={{ padding:"18px 14px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", gap:"10px", minHeight:"64px" }}>
-          <div style={{ width:"32px", height:"32px", borderRadius:"50%", background:"linear-gradient(135deg,#D4AF37,#a07020)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", flexShrink:0 }}>💍</div>
-          {sidebarOpen && <span style={{ color:"var(--gold)", fontWeight:"800", fontSize:"14px", whiteSpace:"nowrap" }}>لوحة العقيلة</span>}
+          <div className="icon-badge-3d" style={{ width:"32px", height:"32px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", flexShrink:0 }}>💍</div>
+          {sidebarOpen && <span className="font-display" style={{ color:"var(--gold)", fontWeight:"700", fontSize:"15px", whiteSpace:"nowrap" }}>لوحة العقيلة</span>}
           <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{ marginRight:"auto", background:"none", border:"none", color:"var(--text-muted)", cursor:"pointer", fontSize:"16px", flexShrink:0, padding:"4px" }}>
             {sidebarOpen ? "◄" : "►"}
           </button>
@@ -232,7 +234,7 @@ export default function Admin() {
       {/* ── Main content ── */}
       <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column" }}>
         <div style={{ background:"#080b14", borderBottom:"1px solid var(--border)", padding:"0 20px", height:"64px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", position:"sticky", top:0, zIndex:40 }}>
-          <h2 style={{ color:"var(--text)", fontSize:"15px", fontWeight:"700", margin:0 }}>
+          <h2 className="font-display" style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700", margin:0 }}>
             {navItems.find(n=>n.key===tab)?.icon} {navItems.find(n=>n.key===tab)?.label}
           </h2>
           <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
@@ -299,6 +301,7 @@ export default function Admin() {
           )}
 
           {tab==="products"      && <div className="animate-fadeIn"><ManageProducts /></div>}
+          {tab==="customization" && <div className="animate-fadeIn"><CustomizationManager /></div>}
           {tab==="customers"     && <div className="animate-fadeIn"><Customers /></div>}
           {tab==="notifications" && <div className="animate-fadeIn"><Notifications /></div>}
           {tab==="telegram"      && <div className="animate-fadeIn"><TelegramSettings /></div>}
@@ -310,7 +313,7 @@ export default function Admin() {
               <div style={{ display:"flex", gap:"10px", marginBottom:"14px", flexWrap:"wrap" }}>
                 <input className="inp" placeholder="🔍 بحث برقم الطلب أو الاسم أو الهاتف..."
                   value={orderSearch} onChange={e=>setOrderSearch(e.target.value)} style={{ flex:1, minWidth:"180px" }} />
-                <button onClick={exportCSV}
+                <button onClick={exportCSV} className="btn-3d"
                   style={{ padding:"10px 14px", background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.3)", borderRadius:"var(--radius-sm)", color:"#22c55e", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", whiteSpace:"nowrap" }}>
                   📤 تصدير CSV
                 </button>
@@ -382,10 +385,19 @@ export default function Admin() {
 
                       <div style={{ padding:"10px 18px", borderTop:"1px solid var(--border)" }}>
                         {items.map((item:any,j:number)=>(
-                          <div key={j} style={{ display:"flex", alignItems:"center", gap:"10px", padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
-                            {item.image && <img src={item.image} loading="lazy" decoding="async" alt="" style={{ width:"34px",height:"34px",objectFit:"cover",borderRadius:"6px",flexShrink:0 }} />}
-                            <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`} × {item.quantity}</span>
-                            <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
+                          <div key={j} style={{ padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                              {item.image && <img src={item.image} loading="lazy" decoding="async" alt="" style={{ width:"34px",height:"34px",objectFit:"cover",borderRadius:"6px",flexShrink:0 }} />}
+                              <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`} × {item.quantity}</span>
+                              <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
+                            </div>
+                            {Array.isArray(item.customization) && item.customization.length > 0 && (
+                              <div style={{ marginTop:"4px", marginRight:"44px", background:"rgba(212,175,55,0.06)", border:"1px solid rgba(212,175,55,0.2)", borderRadius:"6px", padding:"4px 8px" }}>
+                                {item.customization.map((c:any,ci:number)=>(
+                                  <p key={ci} style={{ color:"var(--gold)", fontSize:"11px", margin:0, fontWeight:"700" }}>🎨 {c.label}: <span style={{ color:"var(--text-dim)", fontWeight:"400" }}>{c.value}</span></p>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                         {order.deliveryFee>0 && (
@@ -412,18 +424,18 @@ export default function Admin() {
 
                       <div style={{ padding:"10px 18px", borderTop:"1px solid var(--border)", display:"flex", gap:"6px", flexWrap:"wrap" }}>
                         {order.status==="pending" && <>
-                          <button onClick={()=>updateStatus(order.id,"confirmed")} style={ab("#22c55e")}>✅ قبول</button>
-                          <button onClick={()=>updateStatus(order.id,"rejected")}  style={ab("#ef4444")}>❌ رفض</button>
+                          <button onClick={()=>updateStatus(order.id,"confirmed")} className="btn-3d" style={ab("#22c55e")}>✅ قبول</button>
+                          <button onClick={()=>updateStatus(order.id,"rejected")}  className="btn-3d" style={ab("#ef4444")}>❌ رفض</button>
                         </>}
                         {order.status==="rejected" && (
-                          <button onClick={()=>updateStatus(order.id,"pending")} style={ab("#f59e0b")}>↩️ استرجاع الطلب</button>
+                          <button onClick={()=>updateStatus(order.id,"pending")} className="btn-3d" style={ab("#f59e0b")}>↩️ استرجاع الطلب</button>
                         )}
-                        {order.status==="confirmed"  && isDel  && <button onClick={()=>updateStatus(order.id,"on_the_way")} style={ab("#3b82f6")}>🚗 خرج للتوصيل</button>}
-                        {order.status==="on_the_way"            && <button onClick={()=>updateStatus(order.id,"delivered")}  style={ab("#8b5cf6")}>📦 تم التوصيل</button>}
-                        {order.status==="confirmed"  && !isDel  && <button onClick={()=>updateStatus(order.id,"collected")}  style={ab("#8b5cf6")}>🤝 تم الاستلام</button>}
-                        <a href={`https://wa.me/${customer.phone}`} target="_blank" rel="noreferrer"
+                        {order.status==="confirmed"  && isDel  && <button onClick={()=>updateStatus(order.id,"on_the_way")} className="btn-3d" style={ab("#3b82f6")}>🚗 خرج للتوصيل</button>}
+                        {order.status==="on_the_way"            && <button onClick={()=>updateStatus(order.id,"delivered")}  className="btn-3d" style={ab("#8b5cf6")}>📦 تم التوصيل</button>}
+                        {order.status==="confirmed"  && !isDel  && <button onClick={()=>updateStatus(order.id,"collected")}  className="btn-3d" style={ab("#8b5cf6")}>🤝 تم الاستلام</button>}
+                        <a href={`https://wa.me/${customer.phone}`} target="_blank" rel="noreferrer" className="btn-3d"
                           style={{...ab("#25D366"),textDecoration:"none"}}>💬 واتساب</a>
-                        <button onClick={()=>deleteOrder(order.id)} style={{...ab("#ef4444"),marginRight:"auto"}}>🗑️ حذف</button>
+                        <button onClick={()=>deleteOrder(order.id)} className="btn-3d" style={{...ab("#ef4444"),marginRight:"auto"}}>🗑️ حذف</button>
                       </div>
                     </div>
                   );

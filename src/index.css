@@ -25,7 +25,10 @@
   --shadow-gold: 0 0 40px rgba(184,150,46,0.1);
   --shadow-card: 0 8px 32px rgba(0,0,0,0.6);
   --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  --font-display: 'Reem Kufi', 'El Messiri', 'Cairo', sans-serif;
 }
+
+.font-display { font-family: var(--font-display); }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -93,6 +96,15 @@ input, button, textarea, select {
   70%  { transform: scale(1.2); }
   100% { transform: scale(1); }
 }
+@keyframes shineSweep {
+  0%   { transform: translateX(-120%) skewX(-15deg); }
+  55%  { transform: translateX(160%) skewX(-15deg); }
+  100% { transform: translateX(160%) skewX(-15deg); }
+}
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-4px) scale(1.04); }
+}
 
 /* ── Utility classes ── */
 .animate-fadeIn  { animation: fadeIn  0.4s ease forwards; }
@@ -121,7 +133,7 @@ input, button, textarea, select {
   border: 1px solid var(--border);
 }
 
-/* ── Gold button ── */
+/* ── Gold button — 3D lift + press ── */
 .btn-gold {
   padding: 12px 28px;
   background: linear-gradient(135deg, #B8962E 0%, #8a6e1a 100%);
@@ -131,15 +143,35 @@ input, button, textarea, select {
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 4px 20px rgba(184,150,46,0.2);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease, background 0.25s ease;
+  box-shadow: 0 4px 20px rgba(184,150,46,0.2), inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.2);
   letter-spacing: 0.03em;
 }
 .btn-gold:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
   background: linear-gradient(135deg, #C9A535 0%, #9a7e22 100%);
-  box-shadow: 0 8px 28px rgba(184,150,46,0.35);
+  box-shadow: 0 10px 30px rgba(184,150,46,0.4), inset 0 1px 1px rgba(255,255,255,0.3), inset 0 -2px 3px rgba(0,0,0,0.2);
 }
+.btn-gold:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 10px rgba(184,150,46,0.3), inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* ── Generic 3D button utility — drop onto any custom button/link ── */
+.btn-3d {
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.08);
+}
+.btn-3d:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: var(--gold) !important;
+  box-shadow: 0 10px 26px rgba(184,150,46,0.3), inset 0 1px 1px rgba(255,255,255,0.12);
+}
+.btn-3d:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
 .btn-ghost {
   padding: 12px 28px;
   background: transparent;
@@ -149,11 +181,15 @@ input, button, textarea, select {
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
-  transition: var(--transition);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), border-color 0.25s ease, color 0.25s ease;
 }
 .btn-ghost:hover {
   border-color: var(--gold-border);
   color: var(--text);
+  transform: translateY(-2px);
+}
+.btn-ghost:active {
+  transform: translateY(0) scale(0.97);
 }
 
 /* ── Input ── */
@@ -286,4 +322,22 @@ input, button, textarea, select {
 /* ── Font display-swap fallback (perf) ── */
 @font-face {
   font-display: swap;
+}
+
+/* ── Shine sweep — glossy 3D highlight that sweeps across a card ── */
+.shine-sweep { position: relative; overflow: hidden; }
+.shine-sweep::after {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  animation: shineSweep 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Glossy 3D icon badge ── */
+.icon-badge-3d {
+  background: linear-gradient(145deg, #f0d675, var(--gold) 55%, #8a6e1a);
+  box-shadow: 0 6px 16px rgba(184,150,46,0.35), inset 0 1px 2px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.2);
+  animation: iconFloat 3.5s ease-in-out infinite;
 }

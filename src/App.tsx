@@ -1,4 +1,5 @@
-import logo from "./assets/Logo.jpeg";
+import logo from "./assets/Logo.png";
+import shopHeroVideo from "./assets/home-page.mp4";
 import { useEffect, useState, useContext, useRef, useMemo } from "react";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
@@ -96,7 +97,7 @@ function App() {
   const filteredProducts = useMemo(() =>
     products
       .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()))
-      .filter(p => category === "all" ? true : p.category === category),
+      .filter(p => category === "all" ? true : category === "customized" ? !!p.customizable : p.category === category),
     [products, search, category]
   );
 
@@ -108,49 +109,56 @@ function App() {
       {/* ── Navbar ── */}
       {showNavbar && (
         <nav style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "0 20px", height: "64px",
-          borderBottom: "1px solid var(--border)",
-          background: "rgba(8,11,20,0.95)",
-          backdropFilter: "blur(20px)",
           position: "sticky", top: 0, zIndex: 100,
+          background: "rgba(8,8,8,0.78)",
+          backdropFilter: "blur(22px)",
+          WebkitBackdropFilter: "blur(22px)",
+          borderBottom: "1px solid var(--gold-border)",
+          boxShadow: "0 1px 24px rgba(0,0,0,0.35)",
         }}>
-          {/* Logo */}
-          <img src={logo} onClick={() => navigate("/")} style={{ height: "50px", cursor: "pointer", borderRadius: "50%", border: "1.5px solid var(--gold-border)" }} alt="logo" />
-
-          {/* Center nav links - desktop */}
-          <div className="hide-mobile" style={{ display: "flex", gap: "4px" }}>
-            {[
-              ["/shop",  "المتجر"],
-              ["/about", "عن العقيلة"],
-              ["/track", "تتبع طلب"],
-            ].map(([path, label]) => (
-              <button key={path} onClick={() => navigate(path)}
-                style={{ padding: "8px 14px", background: "transparent", border: "none", color: location.pathname === path ? "var(--gold)" : "var(--text-muted)", cursor: "pointer", fontSize: "13px", fontWeight: location.pathname === path ? "700" : "400", borderRadius: "8px", transition: "var(--transition)", fontFamily: "inherit", position: "relative" }}
-                onMouseEnter={e => e.currentTarget.style.color = "var(--text)"}
-                onMouseLeave={e => e.currentTarget.style.color = location.pathname === path ? "var(--gold)" : "var(--text-muted)"}>
-                {label}
-                {location.pathname === path && <div style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", width: "20px", height: "2px", background: "var(--gold)", borderRadius: "99px" }} />}
-              </button>
-            ))}
-          </div>
-
-          {/* Right side */}
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            {/* Search - desktop */}
-            <div className="hide-mobile" style={{ position: "relative" }}>
-              <span style={{ position: "absolute", top: "50%", right: "12px", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: "13px" }}>🔍</span>
-              <input
-                placeholder="ابحث..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ padding: "8px 36px 8px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text)", fontSize: "13px", width: "160px", outline: "none", fontFamily: "inherit", transition: "var(--transition)" }}
-                onFocus={e => { e.target.style.borderColor = "var(--gold-border)"; e.target.style.width = "200px"; }}
-                onBlur={e  => { e.target.style.borderColor = "var(--border)"; e.target.style.width = "160px"; }}
-              />
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            maxWidth: "1360px", margin: "0 auto",
+            padding: "0 24px", height: "72px",
+          }}>
+            {/* Brand */}
+            <div onClick={() => navigate("/")} style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
+              <img src={logo} alt="logo" style={{ height: "42px", width: "42px", objectFit: "cover", borderRadius: "12px", border: "1.5px solid var(--gold-border)", boxShadow: "0 0 16px rgba(184,150,46,0.18)" }} />
+              <span className="hide-mobile gold-shimmer font-display" style={{ fontSize: "19px", fontWeight: "700", letterSpacing: "0.02em" }}>العقيلة</span>
             </div>
 
-            {/* User dropdown */}
+            {/* Center nav links - desktop */}
+            <div className="hide-mobile" style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)", borderRadius: "999px", padding: "5px" }}>
+              {[
+                ["/shop",  "المتجر"],
+                ["/about", "عن العقيلة"],
+                ["/track", "تتبع طلب"],
+              ].map(([path, label]) => (
+                <button key={path} onClick={() => navigate(path)}
+                  style={{ padding: "8px 18px", background: location.pathname === path ? "var(--gold-dim)" : "transparent", border: "none", color: location.pathname === path ? "var(--gold)" : "var(--text-muted)", cursor: "pointer", fontSize: "13px", fontWeight: location.pathname === path ? "700" : "500", borderRadius: "999px", transition: "var(--transition)", fontFamily: "inherit" }}
+                  onMouseEnter={e => { if (location.pathname !== path) e.currentTarget.style.color = "var(--text)"; }}
+                  onMouseLeave={e => { if (location.pathname !== path) e.currentTarget.style.color = "var(--text-muted)"; }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right side */}
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              {/* Search - desktop */}
+              <div className="hide-mobile" style={{ position: "relative" }}>
+                <span style={{ position: "absolute", top: "50%", right: "14px", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: "13px" }}>🔍</span>
+                <input
+                  placeholder="ابحث..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  style={{ padding: "9px 38px 9px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "999px", color: "var(--text)", fontSize: "13px", width: "170px", outline: "none", fontFamily: "inherit", transition: "var(--transition)" }}
+                  onFocus={e => { e.target.style.borderColor = "var(--gold-border)"; e.target.style.background = "rgba(184,150,46,0.05)"; e.target.style.width = "210px"; }}
+                  onBlur={e  => { e.target.style.borderColor = "var(--border)"; e.target.style.background = "rgba(255,255,255,0.04)"; e.target.style.width = "170px"; }}
+                />
+              </div>
+
+              {/* User dropdown */}
             {user ? (
               <div ref={dropRef} style={{ position: "relative" }}>
                 <button onClick={() => setDropdown(!dropdown)}
@@ -203,19 +211,15 @@ function App() {
                 )}
               </div>
             ) : (
-              <button onClick={() => navigate("/login")}
-                style={{ padding: "8px 18px", background: "linear-gradient(135deg,#D4AF37,#b8942a)", color: "#000", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", fontSize: "13px", fontFamily: "inherit", boxShadow: "0 2px 12px rgba(212,175,55,0.2)", transition: "var(--transition)" }}
-                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+              <button onClick={() => navigate("/login")} className="btn-3d"
+                style={{ padding: "8px 18px", background: "linear-gradient(135deg,#D4AF37,#b8942a)", color: "#000", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
                 دخول / تسجيل
               </button>
             )}
 
             {/* Cart */}
-            <button onClick={() => navigate("/cart")}
-              style={{ position: "relative", width: "40px", height: "40px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center", transition: "var(--transition)" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "var(--gold-border)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+            <button onClick={() => navigate("/cart")} className="btn-3d"
+              style={{ position: "relative", width: "40px", height: "40px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               🛒
               {cart.length > 0 && (
                 <span style={{ position: "absolute", top: "-4px", left: "-4px", background: "var(--gold)", color: "#000", borderRadius: "50%", width: "16px", height: "16px", fontSize: "9px", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", animation: "notifyPop 0.3s ease" }}>
@@ -223,6 +227,7 @@ function App() {
                 </span>
               )}
             </button>
+            </div>
           </div>
         </nav>
       )}
@@ -234,30 +239,49 @@ function App() {
 
         {/* Shop */}
         <Route path="/shop" element={
-          <div style={{ padding: "24px 16px" }} className="animate-fadeIn">
-            {/* Ring sizer */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
-              <div style={{ background: "linear-gradient(135deg,#0e1225,#141b30)", border: "1px solid var(--gold-border)", borderRadius: "18px", padding: "16px 24px", boxShadow: "var(--shadow-gold)", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", maxWidth: "420px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <svg width="36" height="36" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="24" r="13" stroke="#D4AF37" strokeWidth="2.5" fill="none"/><circle cx="22" cy="24" r="7.5" stroke="#D4AF3788" strokeWidth="1.5" fill="none" strokeDasharray="3 2.5"/><path d="M16 10 Q22 6 28 10" stroke="#D4AF37" strokeWidth="2.2" strokeLinecap="round" fill="none"/><circle cx="22" cy="7.5" r="2.5" fill="#D4AF37"/></svg>
-                  <div>
-                    <p style={{ color: "var(--gold)", fontWeight: "700", fontSize: "14px", margin: 0 }}>💍 قيس مقاس خاتمك</p>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", margin: "2px 0 0" }}>حمّل التطبيق واعرف مقاسك بدقة</p>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  {[["https://apps.apple.com/bh/app/ring-sizer-by-jason-withers/id795721582","App Store"],["https://play.google.com/store/apps/details?id=ru.cherrydesign.ringsizer","Google Play"]].map(([url,label])=>(
+          <div className="animate-fadeIn">
+            {/* Full-width hero — video background, content overlaid */}
+            <div className="shine-sweep" style={{ position: "relative", width: "100%", minHeight: "300px", overflow: "hidden" }}>
+              <video src={shopHeroVideo} autoPlay loop muted playsInline
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,6,6,0.55) 0%, rgba(6,6,6,0.3) 45%, rgba(6,6,6,0.8) 100%)" }} />
+              <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.06)", mixBlendMode: "overlay" }} />
+
+              <div style={{
+                position: "relative", zIndex: 2, padding: "44px 20px",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                textAlign: "center", gap: "12px",
+              }}>
+                <h2 className="font-display" style={{ color: "var(--gold)", fontSize: "clamp(24px,4vw,34px)", fontWeight: "700", margin: 0, display: "flex", alignItems: "center", gap: "8px", textShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+                  لمسة تعكس ذوقك <span style={{ fontSize: "22px" }}>💎</span>
+                </h2>
+                <p style={{ color: "rgba(237,232,223,0.85)", fontSize: "14px", margin: 0 }}>
+                  جودة عالية .. تصاميم راقية .. تفصيل حسب طلبك
+                </p>
+                <div style={{ display: "flex", gap: "10px", marginTop: "6px", flexWrap: "wrap", justifyContent: "center" }}>
+                  {[["https://apps.apple.com/bh/app/ring-sizer-by-jason-withers/id795721582","App Store","🍎"],["https://play.google.com/store/apps/details?id=ru.cherrydesign.ringsizer","Google Play","▶️"]].map(([url,label,icon])=>(
                     <a key={label} href={url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
-                      <div style={{ background: "rgba(0,0,0,0.5)", border: "1px solid #333", borderRadius: "10px", padding: "7px 14px", cursor: "pointer", color: "white", fontSize: "12px", fontWeight: "700", transition: "var(--transition)" }}
-                        onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.borderColor="var(--gold)"}
-                        onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.borderColor="#333"}>
-                        {label}
+                      <div className="btn-3d" style={{ display:"flex", alignItems:"center", gap:"6px", background: "rgba(0,0,0,0.55)", border: "1px solid #333", borderRadius: "10px", padding: "9px 18px", cursor: "pointer", color: "white", fontSize: "12px", fontWeight: "700" }}>
+                        <span>{icon}</span>{label}
                       </div>
                     </a>
                   ))}
                 </div>
+
+                <div style={{ display: "flex", gap: "26px", marginTop: "18px", flexWrap: "wrap", justifyContent: "center" }}>
+                  {[["🎖️","جودة مضمونة",0],["💠","تصاميم فريدة",0.4],["🚚","شحن سريع وآمن",0.8]].map(([icon,label,delay]) => (
+                    <div key={label as string} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div className="icon-badge-3d" style={{ width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0, animationDelay: `${delay}s` }}>
+                        {icon}
+                      </div>
+                      <span style={{ color: "rgba(237,232,223,0.85)", fontSize: "13px", fontWeight: "600" }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
+            <div style={{ padding: "24px 16px" }}>
 
             {/* Mobile search */}
             <div className="hide-desktop" style={{ marginBottom: "16px" }}>
@@ -270,12 +294,16 @@ function App() {
                 style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="all"?"var(--gold)":"var(--border)"}`, background:category==="all"?"var(--gold)":"transparent", color:category==="all"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit" }}>
                 الكل 🌟
               </button>
-              {categories.map(cat => (
+              {categories.filter(cat => cat.value !== "other").map(cat => (
                 <button key={cat.value} onClick={() => setCategory(cat.value)}
                   style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category===cat.value?"var(--gold)":"var(--border)"}`, background:category===cat.value?"var(--gold)":"transparent", color:category===cat.value?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit" }}>
                   {cat.icon} {cat.label}
                 </button>
               ))}
+              <button onClick={() => setCategory("customized")}
+                style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="customized"?"var(--gold)":"var(--border)"}`, background:category==="customized"?"var(--gold)":"transparent", color:category==="customized"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit" }}>
+                🎨 منتجات مخصصة
+              </button>
             </div>
 
             {/* Grid */}
@@ -306,6 +334,7 @@ function App() {
                     {soldOut && <div className="badge-overlay badge-red">Sold Out</div>}
                     {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
                     {product.isNew && <div className="badge-overlay badge-green badge-right">جديد ✨</div>}
+                    {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 مخصص</div>}
                     {product.video ? (
                       <video src={product.video} autoPlay loop muted playsInline style={{ width: "100%", height: "200px", objectFit: "cover" }} />
                     ) : (
@@ -319,6 +348,7 @@ function App() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
         } />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { collection, getDocs, doc, updateDoc, increment, query, orderBy } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
@@ -129,12 +130,12 @@ export default function Customers() {
       )}
 
       {/* Balance modal */}
-      {selected && (
+      {selected && createPortal(
         <>
           <div onClick={() => setSelected(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", backdropFilter:"blur(8px)", zIndex:500 }} />
-          <div style={{ position:"fixed", inset:0, zIndex:501, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }}>
+          <div style={{ position:"fixed", inset:0, zIndex:501, overflowY:"auto", padding:"40px 20px" }}>
             <div onClick={e => e.stopPropagation()} className="animate-scaleIn"
-              style={{ background:"var(--bg-2)", border:"1px solid var(--gold-border)", borderRadius:"24px", padding:"28px", width:"100%", maxWidth:"380px", direction:"rtl", boxShadow:"0 24px 60px rgba(0,0,0,0.7)" }}>
+              style={{ background:"var(--bg-2)", border:"1px solid var(--gold-border)", borderRadius:"24px", padding:"28px", width:"100%", maxWidth:"380px", margin:"0 auto", direction:"rtl", boxShadow:"0 24px 60px rgba(0,0,0,0.7)" }}>
               <div style={{ textAlign:"center", marginBottom:"20px" }}>
                 <div style={{ width:"50px", height:"50px", borderRadius:"50%", background:"linear-gradient(135deg,#D4AF37,#a07020)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", fontWeight:"900", color:"#000", margin:"0 auto 12px" }}>
                   {(selected.name||"؟")[0].toUpperCase()}
@@ -161,7 +162,8 @@ export default function Customers() {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

@@ -51,7 +51,7 @@ export default function Orders() {
       <div style={{ maxWidth:"680px", margin:"0 auto" }}>
 
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"24px", flexWrap:"wrap", gap:"10px" }}>
-          <h1 style={{ color:"var(--gold)", fontSize:"22px", fontWeight:"800" }}>📦 طلباتي</h1>
+          <h1 className="font-display" style={{ color:"var(--gold)", fontSize:"22px", fontWeight:"800" }}>📦 طلباتي</h1>
           <button onClick={() => navigate("/shop")} className="btn-ghost" style={{ fontSize:"13px", padding:"8px 16px" }}>
             🛍️ تسوق مجدداً
           </button>
@@ -98,13 +98,22 @@ export default function Orders() {
                   {isOpen && (
                     <div style={{ borderTop:"1px solid var(--border)", padding:"16px 18px", background:"rgba(0,0,0,0.2)" }} className="animate-fadeIn">
                       {(order.items||[]).map((item:any,j:number) => (
-                        <div key={j} style={{ display:"flex", gap:"10px", alignItems:"center", padding:"8px 0", borderBottom:"1px solid var(--border)" }}>
-                          {item.image && <img src={item.image} style={{ width:"40px",height:"40px",objectFit:"cover",borderRadius:"8px",flexShrink:0 }} alt="" />}
-                          <div style={{ flex:1 }}>
-                            <p style={{ color:"var(--text)", fontSize:"13px", margin:0 }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`}</p>
-                            <p style={{ color:"var(--text-muted)", fontSize:"11px", margin:"2px 0 0" }}>× {item.quantity}</p>
+                        <div key={j} style={{ padding:"8px 0", borderBottom:"1px solid var(--border)" }}>
+                          <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>
+                            {item.image && <img src={item.image} style={{ width:"40px",height:"40px",objectFit:"cover",borderRadius:"8px",flexShrink:0 }} alt="" />}
+                            <div style={{ flex:1 }}>
+                              <p style={{ color:"var(--text)", fontSize:"13px", margin:0 }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`}</p>
+                              <p style={{ color:"var(--text-muted)", fontSize:"11px", margin:"2px 0 0" }}>× {item.quantity}</p>
+                            </div>
+                            <span style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
                           </div>
-                          <span style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
+                          {Array.isArray(item.customization) && item.customization.length > 0 && (
+                            <div style={{ marginTop:"6px", marginRight:"50px" }}>
+                              {item.customization.map((c:any,ci:number)=>(
+                                <p key={ci} style={{ color:"var(--gold)", fontSize:"11px", margin:0 }}>🎨 {c.label}: <span style={{ color:"var(--text-muted)" }}>{c.value}</span></p>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                       <div style={{ display:"flex", justifyContent:"space-between", paddingTop:"10px", marginTop:"4px" }}>
