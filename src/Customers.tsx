@@ -7,7 +7,6 @@ import { useToast } from "./Toast";
 export default function Customers() {
   const { showToast } = useToast();
   const [customers, setCustomers] = useState<any[]>([]);
-  const [orders,    setOrders]    = useState<any[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState("");
   const [selected,  setSelected]  = useState<any|null>(null);
@@ -24,7 +23,7 @@ export default function Customers() {
         getDocs(collection(db, "users")),
         getDocs(query(collection(db, "orders"), orderBy("createdAt","desc"))),
       ]);
-      const allOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const allOrders: any[] = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const users = usersSnap.docs.map(d => {
         const u = { id: d.id, ...d.data() } as any;
         const uOrders = allOrders.filter(o => o.userId === u.uid);
@@ -34,7 +33,6 @@ export default function Customers() {
         return u;
       });
       setCustomers(users);
-      setOrders(allOrders);
     } catch { showToast("خطأ في التحميل","error"); }
     finally { setLoading(false); }
   };

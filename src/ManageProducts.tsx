@@ -4,7 +4,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc,
   doc, serverTimestamp,
 } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "./firebase";
 import { useToast } from "./Toast";
 

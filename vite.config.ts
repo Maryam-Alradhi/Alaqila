@@ -7,15 +7,15 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor':  ['react', 'react-dom', 'react-router-dom'],
-          'firebase-app':  ['firebase/app', 'firebase/auth'],
-          'firebase-db':   ['firebase/firestore'],
-          'firebase-storage': ['firebase/storage'],
+        manualChunks: (id: string) => {
+          if (id.includes('firebase/firestore')) return 'firebase-db';
+          if (id.includes('firebase/storage')) return 'firebase-storage';
+          if (id.includes('firebase/app') || id.includes('firebase/auth')) return 'firebase-app';
+          if (id.includes('react-router-dom') || id.includes('/react-dom/') || id.includes('/react/')) return 'react-vendor';
         },
       },
     },
-    minify: 'esbuild',
+    minify: 'oxc',
     target: 'esnext',
     sourcemap: false,
   },
