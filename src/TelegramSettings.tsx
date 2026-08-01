@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
+import dataProtectedIcon from "./assets/icons/data-protected.png";
 
 export default function TelegramSettings() {
   const { showToast } = useToast();
@@ -66,7 +67,7 @@ export default function TelegramSettings() {
     <div>
       {/* Security notice */}
       <div style={{ background:"rgba(34,197,94,0.08)", border:"1px solid rgba(34,197,94,0.2)", borderRadius:"var(--radius)", padding:"14px 16px", marginBottom:"20px", display:"flex", gap:"12px" }}>
-        <span style={{ fontSize:"20px", flexShrink:0 }}>🔒</span>
+        <img src={dataProtectedIcon} alt="" style={{ width:"20px", height:"20px", objectFit:"contain", flexShrink:0, filter:"invert(1)" }} />
         <div>
           <p style={{ color:"#22c55e", fontWeight:"700", fontSize:"13px", margin:"0 0 4px" }}>أمان عالي</p>
           <p style={{ color:"rgba(34,197,94,0.7)", fontSize:"12px", margin:0, lineHeight:"1.6" }}>
@@ -107,7 +108,7 @@ export default function TelegramSettings() {
         <button onClick={handleSave} disabled={saving} className="btn-gold" style={{ flex:1, opacity:saving?0.6:1 }}>
           {saving ? "جاري الحفظ..." : "💾 حفظ الإعدادات"}
         </button>
-        <button onClick={handleTest} disabled={testing}
+        <button onClick={handleTest} disabled={testing} className="btn-3d"
           style={{ flex:1, padding:"12px", background:"rgba(59,130,246,0.1)", color:"#3b82f6", border:"1px solid rgba(59,130,246,0.3)", borderRadius:"var(--radius)", cursor:testing?"not-allowed":"pointer", fontSize:"14px", fontWeight:"600", fontFamily:"inherit", opacity:testing?0.6:1 }}>
           {testing ? "جاري الإرسال..." : "🧪 اختبار الاتصال"}
         </button>

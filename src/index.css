@@ -181,18 +181,21 @@ input, button, textarea, select {
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), border-color 0.25s ease, color 0.25s ease;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.06);
 }
 .btn-ghost:hover {
   border-color: var(--gold-border);
   color: var(--text);
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.08);
 }
 .btn-ghost:active {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(0) scale(0.96);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
-/* ── Input ── */
+/* ── Input — 3D inset look ── */
 .inp {
   width: 100%;
   padding: 12px 16px;
@@ -204,12 +207,26 @@ input, button, textarea, select {
   font-family: inherit;
   outline: none;
   transition: var(--transition);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.35), inset 0 1px 1px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.04);
 }
 .inp:focus {
   border-color: var(--gold-border);
   background: rgba(184,150,46,0.04);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.35), 0 0 0 3px rgba(184,150,46,0.12);
 }
 .inp::placeholder { color: var(--text-muted); }
+
+/* ── Force dark theme on browser autofill (Chrome/Edge default to a white box + their own icon) ── */
+.inp:-webkit-autofill,
+.inp:-webkit-autofill:hover,
+.inp:-webkit-autofill:focus,
+.inp:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: inset 0 0 0px 1000px #14110a, inset 0 2px 6px rgba(0,0,0,0.35) !important;
+  box-shadow: inset 0 0 0px 1000px #14110a, inset 0 2px 6px rgba(0,0,0,0.35) !important;
+}
 
 /* ── Card ── */
 .card {

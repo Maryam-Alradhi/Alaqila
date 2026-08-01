@@ -72,6 +72,7 @@ function AdminLogin() {
         <button
           onClick={handleLogin}
           disabled={loading}
+          className="btn-3d"
           style={{
             width: "100%",
             padding: "14px",
@@ -104,6 +105,7 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   direction: "ltr",
   textAlign: "left",
+  boxShadow: "inset 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 1px rgba(0,0,0,0.25)",
 };
 
 export default AdminLogin;

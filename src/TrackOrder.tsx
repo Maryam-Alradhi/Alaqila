@@ -3,17 +3,27 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
+import pendingIcon from "./assets/icons/pending.png";
+import confirmedIcon from "./assets/icons/confirmed.png";
+import onTheWayIcon from "./assets/icons/on_the_way.png";
+import deliveredIcon from "./assets/icons/delivered.png";
+import collectedIcon from "./assets/icons/collected.png";
+import customerServiceIcon from "./assets/icons/customer-service.png";
+import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
+import qualityIcon from "./assets/icons/quality.png";
+import securePaymentIcon from "./assets/icons/secure-payment.png";
+import encryptedIcon from "./assets/icons/encrypted.png";
 
 const deliverySteps = [
-  { key:"pending",    label:"تم تقديم الطلب", icon:"📋" },
-  { key:"confirmed",  label:"تم التأكيد",      icon:"✅" },
-  { key:"on_the_way", label:"في الطريق",       icon:"🚗" },
-  { key:"delivered",  label:"تم التوصيل",      icon:"📦" },
+  { key:"pending",    label:"تم تقديم الطلب", icon:pendingIcon },
+  { key:"confirmed",  label:"تم التأكيد",      icon:confirmedIcon },
+  { key:"on_the_way", label:"في الطريق",       icon:onTheWayIcon },
+  { key:"delivered",  label:"تم التوصيل",      icon:deliveredIcon },
 ];
 const pickupSteps = [
-  { key:"pending",   label:"تم تقديم الطلب", icon:"📋" },
-  { key:"confirmed", label:"تم التأكيد",      icon:"✅" },
-  { key:"collected", label:"تم الاستلام",     icon:"🤝" },
+  { key:"pending",   label:"تم تقديم الطلب", icon:pendingIcon },
+  { key:"confirmed", label:"تم التأكيد",      icon:confirmedIcon },
+  { key:"collected", label:"تم الاستلام",     icon:collectedIcon },
 ];
 const statusColors: Record<string,string> = {
   pending:"#f59e0b", confirmed:"#22c55e", on_the_way:"#3b82f6",
@@ -28,10 +38,10 @@ const explainerSteps = [
   { icon:"📝", label:"تم التسليم" },
 ];
 const trustFeatures = [
-  { icon:"🎧", title:"دعم على مدار الساعة", desc:"فريق الدعم جاهز لمساعدتك 24/7" },
-  { icon:"🔒", title:"دفع آمن",              desc:"جميع عمليات الدفع مشفرة 100%" },
-  { icon:"🚚", title:"شحن سريع",             desc:"توصيل طلبك بسرعة في جميع أنحاء البحرين" },
-  { icon:"💎", title:"جودة مضمونة",          desc:"ضمان على جميع المنتجات" },
+  { icon:customerServiceIcon, title:"دعم على مدار الساعة", desc:"فريق الدعم جاهز لمساعدتك 24/7" },
+  { icon:securePaymentIcon, title:"دفع آمن",              desc:"جميع عمليات الدفع مشفرة 100%" },
+  { icon:fastDeliveryIcon, title:"شحن سريع",             desc:"توصيل طلبك بسرعة في جميع أنحاء البحرين" },
+  { icon:qualityIcon, title:"جودة مضمونة",          desc:"ضمان على جميع المنتجات" },
 ];
 
 function TrackOrder() {
@@ -168,7 +178,9 @@ function TrackOrder() {
               {trustFeatures.map(({ icon, title, desc }) => (
                 <div key={title} className="card" style={{ textAlign:"center" }}>
                   <div className="icon-badge-3d" style={{ width:"48px", height:"48px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", margin:"0 auto 14px" }}>
-                    {icon}
+                    {icon.includes(".png")
+                      ? <img src={icon} alt="" style={{ width:"20px", height:"20px", objectFit:"contain" }} />
+                      : icon}
                   </div>
                   <h3 style={{ color:"var(--gold)", fontSize:"14px", margin:"0 0 6px", fontWeight:"700" }}>{title}</h3>
                   <p style={{ color:"var(--text-muted)", fontSize:"12px", margin:0, lineHeight:"1.7" }}>{desc}</p>
@@ -209,8 +221,11 @@ function TrackOrder() {
                     {order.createdAt?.toDate?.()?.toLocaleString("ar-BH") || "—"}
                   </p>
                 </div>
-                <span style={{ background:statusColors[order.status]+"22", color:statusColors[order.status], padding:"6px 14px", borderRadius:"20px", fontSize:"13px", border:`1px solid ${statusColors[order.status]}44`, fontWeight:"700" }}>
-                  {steps.find(s=>s.key===order.status)?.icon || "❌"} {steps.find(s=>s.key===order.status)?.label || "مرفوض"}
+                <span style={{ background:statusColors[order.status]+"22", color:statusColors[order.status], padding:"6px 14px", borderRadius:"20px", fontSize:"13px", border:`1px solid ${statusColors[order.status]}44`, fontWeight:"700", display:"inline-flex", alignItems:"center", gap:"6px" }}>
+                  {steps.find(s=>s.key===order.status)?.icon
+                    ? <img src={steps.find(s=>s.key===order.status)!.icon} alt="" style={{ width:"14px", height:"14px", objectFit:"contain", filter:"invert(1)" }} />
+                    : "❌"}
+                  {steps.find(s=>s.key===order.status)?.label || "مرفوض"}
                 </span>
               </div>
             </div>
@@ -238,7 +253,7 @@ function TrackOrder() {
             {/* ✅ INVOICE on completion */}
             {isDone && (
               <div>
-                <button onClick={() => setShowInvoice(!showInvoice)}
+                <button onClick={() => setShowInvoice(!showInvoice)} className="btn-3d"
                   style={{ width:"100%", padding:"12px 16px", background:"var(--gold-dim)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius)", color:"var(--gold)", cursor:"pointer", fontSize:"14px", fontWeight:"700", fontFamily:"inherit", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px" }}>
                   🧾 {showInvoice ? "إخفاء الفاتورة" : "عرض الفاتورة"}
                 </button>
@@ -352,7 +367,7 @@ function TrackOrder() {
                           boxShadow:current?"0 0 16px rgba(212,175,55,0.5)":"none",
                           transition:"0.3s",
                         }}>
-                          {done ? "✓" : step.icon}
+                          {done ? "✓" : <img src={step.icon} alt="" style={{ width:"16px", height:"16px", objectFit:"contain", filter:current?"none":"invert(1)" }} />}
                         </div>
                         {idx < steps.length-1 && (
                           <div style={{ width:"2px", height:"30px", background:done?"var(--gold)":"var(--border)", transition:"0.3s" }} />
@@ -418,7 +433,7 @@ function TrackOrder() {
 
             {/* ✅ CANCEL BUTTON - only when pending */}
             {canCancel && (
-              <button onClick={handleCancel} disabled={cancelling}
+              <button onClick={handleCancel} disabled={cancelling} className="btn-3d"
                 style={{ width:"100%", padding:"12px 16px", background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.35)", borderRadius:"var(--radius)", color:"#ef4444", cursor:cancelling?"not-allowed":"pointer", fontSize:"14px", fontWeight:"700", fontFamily:"inherit", opacity:cancelling?0.6:1 }}>
                 {cancelling ? "⏳ جاري الإلغاء..." : "❌ إلغاء الطلب"}
               </button>
@@ -426,8 +441,8 @@ function TrackOrder() {
 
             {/* Show message if confirmed+ that cancellation is not possible */}
             {order.status !== "pending" && order.status !== "rejected" && !isDone && (
-              <div style={{ background:"rgba(245,158,11,0.06)", border:"1px solid rgba(245,158,11,0.25)", borderRadius:"var(--radius-sm)", padding:"10px 14px", color:"#f59e0b", fontSize:"12px", textAlign:"center" }}>
-                🔒 لا يمكن إلغاء الطلب بعد قبوله
+              <div style={{ background:"rgba(245,158,11,0.06)", border:"1px solid rgba(245,158,11,0.25)", borderRadius:"var(--radius-sm)", padding:"10px 14px", color:"#f59e0b", fontSize:"12px", textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
+                <img src={encryptedIcon} alt="" style={{ width:"13px", height:"13px", objectFit:"contain", filter:"invert(1)" }} /> لا يمكن إلغاء الطلب بعد قبوله
               </div>
             )}
 

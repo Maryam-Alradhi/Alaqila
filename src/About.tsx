@@ -1,30 +1,35 @@
 import { useNavigate } from "react-router-dom";
 import aboutHeroVideo from "./assets/About-alaqila.mp4";
+import customerServiceIcon from "./assets/icons/customer-service.png";
+import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
+import uniqueDesignsIcon from "./assets/icons/unique-designs.png";
+import qualityIcon from "./assets/icons/quality.png";
+import whatsappIcon from "./assets/icons/whatsapp.png";
 
 export default function About() {
   const navigate = useNavigate();
 
   const features = [
-    { icon: "🎧", title: "خدمة عملاء مميزة", desc: "نحن هنا لخدمتك على مدار الساعة" },
-    { icon: "🚚", title: "توصيل سريع",       desc: "توصيل آمن وسريع في جميع أنحاء البحرين" },
-    { icon: "💎", title: "تصاميم حصرية",     desc: "تصاميم فريدة تجمع بين الأصالة والحداثة" },
-    { icon: "🛡️", title: "جودة مضمونة",       desc: "نختار أجود الخامات لضمان أعلى جودة" },
+    { icon: customerServiceIcon, title: "خدمة عملاء مميزة", desc: "نحن هنا لخدمتك على مدار الساعة" },
+    { icon: fastDeliveryIcon,    title: "توصيل سريع",       desc: "توصيل آمن وسريع في جميع أنحاء البحرين" },
+    { icon: uniqueDesignsIcon,   title: "تصاميم حصرية",     desc: "تصاميم فريدة تجمع بين الأصالة والحداثة" },
+    { icon: qualityIcon,         title: "جودة مضمونة",       desc: "نختار أجود الخامات لضمان أعلى جودة" },
   ];
 
   const stats = [
     { icon: "👥", value: "+10K", label: "عميل سعيد" },
     { icon: "🎁", value: "+5K",  label: "منتج فاخر" },
     { icon: "⭐", value: "98%",  label: "رضا العملاء" },
-    { icon: "🏅", value: "4.8",  label: "تقييم المتجر" },
+    { icon: qualityIcon, value: "4.8",  label: "تقييم المتجر" },
   ];
 
   return (
     <div style={{ background: "var(--bg)", minHeight: "100vh", direction: "rtl" }}>
 
       {/* Hero — video background */}
-      <div className="shine-sweep" style={{ position: "relative", width: "100%", minHeight: "380px", overflow: "hidden" }}>
+      <div className="shine-sweep" style={{ position: "relative", width: "100%", minHeight: "380px", overflow: "hidden", background: "#000" }}>
         <video src={aboutHeroVideo} autoPlay loop muted playsInline
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 25%" }} />
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,6,6,0.15) 0%, rgba(6,6,6,0.1) 45%, rgba(6,6,6,0.75) 100%)" }} />
 
         <span style={{ position: "absolute", top: "22%", left: "14%", zIndex: 2, color: "var(--gold)", fontSize: "18px", opacity: 0.6 }}>✦</span>
@@ -61,7 +66,7 @@ export default function About() {
           {features.map(({ icon, title, desc }) => (
             <div key={title} className="card" style={{ textAlign: "center" }}>
               <div className="icon-badge-3d" style={{ width: "54px", height: "54px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", margin: "0 auto 16px" }}>
-                {icon}
+                <img src={icon} alt="" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
               </div>
               <h3 style={{ color: "var(--gold)", fontSize: "15px", margin: "0 0 8px", fontWeight: "700" }}>{title}</h3>
               <p style={{ color: "var(--text-muted)", fontSize: "13px", margin: 0, lineHeight: "1.7" }}>{desc}</p>
@@ -82,7 +87,11 @@ export default function About() {
               textAlign: "center", padding: "26px 16px",
               borderInlineEnd: i < stats.length - 1 ? "1px solid var(--border)" : "none",
             }}>
-              <div style={{ fontSize: "26px", marginBottom: "8px" }}>{icon}</div>
+              <div style={{ fontSize: "26px", marginBottom: "8px" }}>
+                {icon.includes(".png")
+                  ? <img src={icon} alt="" style={{ width: "24px", height: "24px", objectFit: "contain", filter: "invert(1)", margin: "0 auto" }} />
+                  : icon}
+              </div>
               <div className="font-display" style={{ color: "var(--gold)", fontSize: "24px", fontWeight: "800" }}>{value}</div>
               <div style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "4px" }}>{label}</div>
             </div>
@@ -123,7 +132,7 @@ export default function About() {
               transition: "var(--transition)",
             }}
           >
-            💬 تواصل معنا على واتساب
+            <img src={whatsappIcon} alt="" style={{ width: "16px", height: "16px", objectFit: "contain", filter: "invert(1)" }} /> تواصل معنا على واتساب
           </a>
         </div>
       </div>

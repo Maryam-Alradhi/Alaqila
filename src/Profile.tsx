@@ -75,7 +75,7 @@ export default function Profile() {
             { key:"profile", label:"👤 ملفي الشخصي" },
             { key:"balance", label:"💰 رصيدي ومكافآتي" },
           ].map(t => (
-            <button key={t.key} onClick={() => setTab(t.key as any)}
+            <button key={t.key} onClick={() => setTab(t.key as any)} className="btn-3d"
               style={{ flex:1, padding:"10px", borderRadius:"var(--radius-sm)", border:`1px solid ${tab===t.key?"var(--gold)":"var(--border)"}`, background:tab===t.key?"var(--gold-dim)":"transparent", color:tab===t.key?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"13px", fontWeight:tab===t.key?"700":"400", fontFamily:"inherit", transition:"var(--transition)" }}>
               {t.label}
             </button>
@@ -111,7 +111,7 @@ export default function Profile() {
               <button onClick={() => navigate("/shop")} className="btn-ghost" style={{ flex:1, fontSize:"13px", padding:"10px" }}>
                 🛍️ المتجر
               </button>
-              <button onClick={async () => { await logout(); navigate("/"); }}
+              <button onClick={async () => { await logout(); navigate("/"); }} className="btn-3d"
                 style={{ flex:1, padding:"10px", background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"var(--radius-sm)", color:"#ef4444", cursor:"pointer", fontSize:"13px", fontWeight:"700", fontFamily:"inherit" }}>
                 🚪 خروج
               </button>

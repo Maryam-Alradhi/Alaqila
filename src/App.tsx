@@ -1,5 +1,16 @@
 import logo from "./assets/Logo.png";
 import shopHeroVideo from "./assets/home-page.mp4";
+import allCatIcon from "./assets/icons/all.png";
+import ringsCatIcon from "./assets/icons/rings.png";
+import necklaceCatIcon from "./assets/icons/necklace.png";
+import braceletCatIcon from "./assets/icons/bracelets.png";
+import customizationCatIcon from "./assets/icons/customization.png";
+import appleIcon from "./assets/icons/apple.png";
+import androidIcon from "./assets/icons/android.png";
+import qualityIcon from "./assets/icons/quality.png";
+import uniqueDesignsIcon from "./assets/icons/unique-designs.png";
+import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
+import whatsappIcon from "./assets/icons/whatsapp.png";
 import { useEffect, useState, useContext, useRef, useMemo } from "react";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
@@ -24,11 +35,18 @@ let _productsCache: any[] | null = null;
 let _categoriesCache: any[] | null = null;
 
 const DEFAULT_CATS = [
-  { value:"all",      label:"الكل 🌟" },
-  { value:"rings",    label:"خواتم 💍" },
-  { value:"necklace", label:"سلاسل 📿" },
-  { value:"bracelet", label:"أساور ✨" },
+  { value:"all",      label:"الكل" },
+  { value:"rings",    label:"خواتم" },
+  { value:"necklace", label:"سلاسل" },
+  { value:"bracelet", label:"أساور" },
 ];
+
+const CAT_ICONS: Record<string,string> = {
+  rings: ringsCatIcon,
+  necklace: necklaceCatIcon,
+  bracelet: braceletCatIcon,
+  bracelets: braceletCatIcon,
+};
 
 function App() {
   const [products, setProducts] = useState<any[]>(_productsCache ?? []);
@@ -134,7 +152,7 @@ function App() {
                 ["/about", "عن العقيلة"],
                 ["/track", "تتبع طلب"],
               ].map(([path, label]) => (
-                <button key={path} onClick={() => navigate(path)}
+                <button key={path} onClick={() => navigate(path)} className="btn-3d"
                   style={{ padding: "8px 18px", background: location.pathname === path ? "var(--gold-dim)" : "transparent", border: "none", color: location.pathname === path ? "var(--gold)" : "var(--text-muted)", cursor: "pointer", fontSize: "13px", fontWeight: location.pathname === path ? "700" : "500", borderRadius: "999px", transition: "var(--transition)", fontFamily: "inherit" }}
                   onMouseEnter={e => { if (location.pathname !== path) e.currentTarget.style.color = "var(--text)"; }}
                   onMouseLeave={e => { if (location.pathname !== path) e.currentTarget.style.color = "var(--text-muted)"; }}>
@@ -152,7 +170,7 @@ function App() {
                   placeholder="ابحث..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  style={{ padding: "9px 38px 9px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "999px", color: "var(--text)", fontSize: "13px", width: "170px", outline: "none", fontFamily: "inherit", transition: "var(--transition)" }}
+                  style={{ padding: "9px 38px 9px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", borderRadius: "999px", color: "var(--text)", fontSize: "13px", width: "170px", outline: "none", fontFamily: "inherit", transition: "var(--transition)", boxShadow: "inset 0 2px 5px rgba(0,0,0,0.3)" }}
                   onFocus={e => { e.target.style.borderColor = "var(--gold-border)"; e.target.style.background = "rgba(184,150,46,0.05)"; e.target.style.width = "210px"; }}
                   onBlur={e  => { e.target.style.borderColor = "var(--border)"; e.target.style.background = "rgba(255,255,255,0.04)"; e.target.style.width = "170px"; }}
                 />
@@ -161,7 +179,7 @@ function App() {
               {/* User dropdown */}
             {user ? (
               <div ref={dropRef} style={{ position: "relative" }}>
-                <button onClick={() => setDropdown(!dropdown)}
+                <button onClick={() => setDropdown(!dropdown)} className="btn-3d"
                   style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px", background: dropdown ? "var(--gold-dim)" : "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "10px", cursor: "pointer", transition: "var(--transition)" }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = "var(--gold-border)"}
                   onMouseLeave={e => !dropdown && (e.currentTarget.style.borderColor = "var(--border)")}>
@@ -191,7 +209,7 @@ function App() {
                       { icon: "📦", label: "طلباتي",       path: "/orders" },
                       { icon: "🛒", label: "السلة",        path: "/cart" },
                     ].map(item => (
-                      <button key={item.path} onClick={() => { navigate(item.path); setDropdown(false); }}
+                      <button key={item.path} onClick={() => { navigate(item.path); setDropdown(false); }} className="btn-3d"
                         style={{ width: "100%", padding: "9px 12px", background: "transparent", border: "none", color: "var(--text-dim)", cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "10px", borderRadius: "8px", transition: "var(--transition)", fontFamily: "inherit", textAlign: "right" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -200,7 +218,7 @@ function App() {
                     ))}
 
                     <div style={{ borderTop: "1px solid var(--border)", marginTop: "6px", paddingTop: "6px" }}>
-                      <button onClick={async () => { await logout(); setDropdown(false); navigate("/"); }}
+                      <button onClick={async () => { await logout(); setDropdown(false); navigate("/"); }} className="btn-3d"
                         style={{ width: "100%", padding: "9px 12px", background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "10px", borderRadius: "8px", transition: "var(--transition)", fontFamily: "inherit", textAlign: "right" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -259,20 +277,20 @@ function App() {
                   جودة عالية .. تصاميم راقية .. تفصيل حسب طلبك
                 </p>
                 <div style={{ display: "flex", gap: "10px", marginTop: "6px", flexWrap: "wrap", justifyContent: "center" }}>
-                  {[["https://apps.apple.com/bh/app/ring-sizer-by-jason-withers/id795721582","App Store","🍎"],["https://play.google.com/store/apps/details?id=ru.cherrydesign.ringsizer","Google Play","▶️"]].map(([url,label,icon])=>(
+                  {[["https://apps.apple.com/bh/app/ring-sizer-by-jason-withers/id795721582","App Store",appleIcon],["https://play.google.com/store/apps/details?id=ru.cherrydesign.ringsizer","Google Play",androidIcon]].map(([url,label,icon])=>(
                     <a key={label} href={url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
                       <div className="btn-3d" style={{ display:"flex", alignItems:"center", gap:"6px", background: "rgba(0,0,0,0.55)", border: "1px solid #333", borderRadius: "10px", padding: "9px 18px", cursor: "pointer", color: "white", fontSize: "12px", fontWeight: "700" }}>
-                        <span>{icon}</span>{label}
+                        <img src={icon} alt="" style={{ width:"14px", height:"14px", objectFit:"contain", filter:"invert(1)" }} />{label}
                       </div>
                     </a>
                   ))}
                 </div>
 
                 <div style={{ display: "flex", gap: "26px", marginTop: "18px", flexWrap: "wrap", justifyContent: "center" }}>
-                  {[["🎖️","جودة مضمونة",0],["💠","تصاميم فريدة",0.4],["🚚","شحن سريع وآمن",0.8]].map(([icon,label,delay]) => (
+                  {[[qualityIcon,"جودة مضمونة",0],[uniqueDesignsIcon,"تصاميم فريدة",0.4],[fastDeliveryIcon,"شحن سريع وآمن",0.8]].map(([icon,label,delay]) => (
                     <div key={label as string} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div className="icon-badge-3d" style={{ width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0, animationDelay: `${delay}s` }}>
-                        {icon}
+                        <img src={icon as string} alt="" style={{ width: "16px", height: "16px", objectFit: "contain" }} />
                       </div>
                       <span style={{ color: "rgba(237,232,223,0.85)", fontSize: "13px", fontWeight: "600" }}>{label}</span>
                     </div>
@@ -290,19 +308,24 @@ function App() {
 
             {/* Categories — loaded from store settings */}
             <div style={{ display:"flex", justifyContent:"center", gap:"8px", marginBottom:"24px", flexWrap:"wrap" }}>
-              <button onClick={() => setCategory("all")}
-                style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="all"?"var(--gold)":"var(--border)"}`, background:category==="all"?"var(--gold)":"transparent", color:category==="all"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit" }}>
-                الكل 🌟
+              <button onClick={() => setCategory("all")} className="btn-3d"
+                style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="all"?"var(--gold)":"var(--border)"}`, background:category==="all"?"var(--gold)":"transparent", color:category==="all"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:"6px" }}>
+                <img src={allCatIcon} alt="" style={{ width:"15px", height:"15px", objectFit:"contain", filter:category==="all"?"none":"invert(1)" }} />
+                الكل
               </button>
               {categories.filter(cat => cat.value !== "other").map(cat => (
-                <button key={cat.value} onClick={() => setCategory(cat.value)}
-                  style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category===cat.value?"var(--gold)":"var(--border)"}`, background:category===cat.value?"var(--gold)":"transparent", color:category===cat.value?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit" }}>
-                  {cat.icon} {cat.label}
+                <button key={cat.value} onClick={() => setCategory(cat.value)} className="btn-3d"
+                  style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category===cat.value?"var(--gold)":"var(--border)"}`, background:category===cat.value?"var(--gold)":"transparent", color:category===cat.value?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:"6px" }}>
+                  {CAT_ICONS[cat.value]
+                    ? <img src={CAT_ICONS[cat.value]} alt="" style={{ width:"15px", height:"15px", objectFit:"contain", filter:category===cat.value?"none":"invert(1)" }} />
+                    : cat.icon}
+                  {cat.label}
                 </button>
               ))}
-              <button onClick={() => setCategory("customized")}
-                style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="customized"?"var(--gold)":"var(--border)"}`, background:category==="customized"?"var(--gold)":"transparent", color:category==="customized"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit" }}>
-                🎨 منتجات مخصصة
+              <button onClick={() => setCategory("customized")} className="btn-3d"
+                style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="customized"?"var(--gold)":"var(--border)"}`, background:category==="customized"?"var(--gold)":"transparent", color:category==="customized"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:"6px" }}>
+                <img src={customizationCatIcon} alt="" style={{ width:"15px", height:"15px", objectFit:"contain", filter:category==="customized"?"none":"invert(1)" }} />
+                منتجات مخصصة
               </button>
             </div>
 
@@ -372,7 +395,7 @@ function App() {
         style={{ position: "fixed", bottom: "24px", left: "24px", background: "#25D366", width: "52px", height: "52px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", boxShadow: "0 4px 20px rgba(37,211,102,0.45)", textDecoration: "none", zIndex: 200, transition: "var(--transition)" }}
         onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"}
         onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"}>
-        💬
+        <img src={whatsappIcon} alt="" style={{ width: "24px", height: "24px", objectFit: "contain", filter: "invert(1)" }} />
       </a>
     </div>
   );

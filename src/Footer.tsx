@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import whatsappIcon from "./assets/icons/whatsapp.png";
+import instagramIcon from "./assets/icons/instagram.png";
 
 const WA = import.meta.env.VITE_WHATSAPP_NUMBER;
 
@@ -66,7 +68,7 @@ export default function Footer() {
               rel="noreferrer"
               style={{ display: "flex", alignItems: "center", gap: "8px", color: "#25D366", fontSize: "13px", textDecoration: "none", padding: "4px 0" }}
             >
-              💬 واتساب
+              <img src={whatsappIcon} alt="" style={{ width: "15px", height: "15px", objectFit: "contain", filter: "invert(1)" }} /> واتساب
             </a>
             <a
               href={`https://instagram.com`}
@@ -74,7 +76,7 @@ export default function Footer() {
               rel="noreferrer"
               style={{ display: "flex", alignItems: "center", gap: "8px", color: "#c13584", fontSize: "13px", textDecoration: "none", padding: "4px 0" }}
             >
-              📸 إنستغرام
+              <img src={instagramIcon} alt="" style={{ width: "15px", height: "15px", objectFit: "contain", filter: "invert(1)" }} /> إنستغرام
             </a>
           </div>
         </div>

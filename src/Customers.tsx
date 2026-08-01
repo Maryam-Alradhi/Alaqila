@@ -67,7 +67,7 @@ export default function Customers() {
       <div style={{ display:"flex", gap:"10px", marginBottom:"18px" }}>
         <input className="inp" placeholder="🔍 بحث بالاسم أو الإيميل أو الهاتف..."
           value={search} onChange={e => setSearch(e.target.value)} style={{ flex:1 }} />
-        <button onClick={load}
+        <button onClick={load} className="btn-3d"
           style={{ padding:"10px 14px", background:"transparent", border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", color:"var(--text-muted)", cursor:"pointer" }}>🔄</button>
       </div>
 
@@ -118,7 +118,7 @@ export default function Customers() {
                     <div style={{ color:"#a78bfa", fontWeight:"800", fontSize:"14px" }}>{(c.balance||0).toFixed(3)}</div>
                     <div style={{ color:"var(--text-muted)", fontSize:"10px" }}>رصيد</div>
                   </div>
-                  <button onClick={() => { setSelected(c); setAddAmount(""); setAddNote(""); }}
+                  <button onClick={() => { setSelected(c); setAddAmount(""); setAddNote(""); }} className="btn-3d"
                     style={{ padding:"6px 12px", background:"var(--gold-dim)", border:"1px solid var(--gold-border)", borderRadius:"8px", color:"var(--gold)", cursor:"pointer", fontSize:"11px", fontWeight:"700", fontFamily:"inherit", whiteSpace:"nowrap" }}>
                     💰 شحن رصيد
                   </button>

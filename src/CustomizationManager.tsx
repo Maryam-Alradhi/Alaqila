@@ -179,11 +179,11 @@ export default function CustomizationManager() {
               <h4 style={{ color:"var(--gold)", margin:"0 0 3px", fontSize:"13px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</h4>
               <p style={{ color:"var(--text-muted)", margin:"0 0 8px", fontSize:"11px" }}>{(p.customFields||[]).length} حقل تخصيص · {p.price} BD</p>
               <div style={{ display:"flex", gap:"5px" }}>
-                <button onClick={() => openEdit(p)}
+                <button onClick={() => openEdit(p)} className="btn-3d"
                   style={{ flex:1, padding:"6px", background:"rgba(212,175,55,0.1)", color:"var(--gold)", border:"1px solid var(--gold-border)", borderRadius:"7px", cursor:"pointer", fontSize:"11px", fontWeight:"700" }}>
                   ✏️ تعديل
                 </button>
-                <button onClick={() => handleDelete(p.id, p.name)}
+                <button onClick={() => handleDelete(p.id, p.name)} className="btn-3d"
                   style={{ flex:1, padding:"6px", background:"rgba(239,68,68,0.08)", color:"#ef4444", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"7px", cursor:"pointer", fontSize:"11px", fontWeight:"700" }}>
                   🗑️ حذف
                 </button>
@@ -206,7 +206,7 @@ export default function CustomizationManager() {
                 <h3 style={{ color:"var(--gold)", margin:0, fontSize:"16px", fontWeight:"800" }}>
                   {editId ? "✏️ تعديل منتج مخصص" : "🎨 إضافة منتج مخصص جديد"}
                 </h3>
-                <button onClick={closeForm}
+                <button onClick={closeForm} className="btn-3d"
                   style={{ background:"rgba(255,255,255,0.06)", border:"none", borderRadius:"50%", width:"30px", height:"30px", color:"var(--text-muted)", fontSize:"16px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
               </div>
 
@@ -255,7 +255,7 @@ export default function CustomizationManager() {
                             onChange={e => setForm(f => ({ ...f, images: f.images.map((v, idx) => idx === i ? e.target.value : v) }))}
                             placeholder="https://..." className="inp" style={{ flex:1, borderColor: pageLinkWarning ? "#f59e0b" : undefined }} dir="ltr" />
                           {i === 0 && <span style={{ background:"var(--gold-dim)", color:"var(--gold)", fontSize:"10px", fontWeight:"700", padding:"4px 8px", borderRadius:"6px", whiteSpace:"nowrap" }}>غلاف</span>}
-                          <button onClick={() => setForm(f => ({ ...f, images: f.images.length > 1 ? f.images.filter((_, idx) => idx !== i) : [""] }))}
+                          <button onClick={() => setForm(f => ({ ...f, images: f.images.length > 1 ? f.images.filter((_, idx) => idx !== i) : [""] }))} className="btn-3d"
                             style={{ background:"rgba(239,68,68,0.08)", color:"#ef4444", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"7px", cursor:"pointer", fontSize:"12px", padding:"8px 10px", flexShrink:0 }}>🗑️</button>
                         </div>
                         {pageLinkWarning && (
@@ -266,7 +266,7 @@ export default function CustomizationManager() {
                       </div>
                     );})}
                   </div>
-                  <button onClick={() => setForm(f => ({ ...f, images: [...f.images, ""] }))}
+                  <button onClick={() => setForm(f => ({ ...f, images: [...f.images, ""] }))} className="btn-3d"
                     style={{ marginTop:"8px", padding:"8px 14px", background:"rgba(184,150,46,0.08)", color:"var(--gold)", border:"1px solid var(--gold-border)", borderRadius:"8px", cursor:"pointer", fontSize:"12px", fontWeight:"700" }}>
                     + إضافة رابط صورة
                   </button>
@@ -297,12 +297,12 @@ export default function CustomizationManager() {
                             onChange={e => setForm(f => ({ ...f, customFields: f.customFields.map((cf, idx) => idx === i ? { ...cf, required: e.target.checked } : cf) }))} />
                           إلزامي
                         </label>
-                        <button onClick={() => setForm(f => ({ ...f, customFields: f.customFields.filter((_, idx) => idx !== i) }))}
+                        <button onClick={() => setForm(f => ({ ...f, customFields: f.customFields.filter((_, idx) => idx !== i) }))} className="btn-3d"
                           style={{ background:"rgba(239,68,68,0.08)", color:"#ef4444", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"7px", cursor:"pointer", fontSize:"12px", padding:"7px 10px" }}>🗑️</button>
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => setForm(f => ({ ...f, customFields: [...f.customFields, { label:"", required:true }] }))}
+                  <button onClick={() => setForm(f => ({ ...f, customFields: [...f.customFields, { label:"", required:true }] }))} className="btn-3d"
                     style={{ marginTop:"8px", padding:"8px 14px", background:"rgba(184,150,46,0.08)", color:"var(--gold)", border:"1px solid var(--gold-border)", borderRadius:"8px", cursor:"pointer", fontSize:"12px", fontWeight:"700" }}>
                     + إضافة حقل
                   </button>

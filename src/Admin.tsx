@@ -11,6 +11,24 @@ import StoreSettings from "./StoreSettings";
 import Customers from "./Customers";
 import Notifications from "./Notifications";
 
+// ── أيقونات القائمة الجانبية ──
+import ordersIcon from "./assets/icons/orders.png";
+import productsIcon from "./assets/icons/products.png";
+import customizationIcon from "./assets/icons/customization.png";
+import customersIcon from "./assets/icons/customers.png";
+import notificationsIcon from "./assets/icons/notifications.png";
+import statisticsIcon from "./assets/icons/statistics.png";
+import settingIcon from "./assets/icons/setting.png";
+import telegramSettingIcon from "./assets/icons/telegram-setting.png";
+import whatsappIcon from "./assets/icons/whatsapp.png";
+// ── أيقونات حالة الطلب ──
+import pendingIcon from "./assets/icons/pending.png";
+import confirmedIcon from "./assets/icons/confirmed.png";
+import onTheWayIcon from "./assets/icons/on_the_way.png";
+import deliveredIcon from "./assets/icons/delivered.png";
+import collectedIcon from "./assets/icons/collected.png";
+import rejectedIcon from "./assets/icons/rejected.png";
+
 type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"telegram"|"store";
 type OrderStatus = "pending"|"confirmed"|"on_the_way"|"delivered"|"collected"|"rejected";
 
@@ -22,9 +40,15 @@ const statusLabels: Record<string,string> = {
   on_the_way:"في الطريق", delivered:"تم التوصيل",
   collected:"تم الاستلام", rejected:"مرفوض",
 };
-const statusIcons: Record<string,string> = {
+// ✅ نص بسيط — يُستخدم بالرسائل النصية (توست) اللي ما تقدر تعرض صورة
+const statusEmojis: Record<string,string> = {
   pending:"⏳", confirmed:"✅", on_the_way:"🚗",
   delivered:"📦", collected:"🤝", rejected:"❌",
+};
+// ✅ صور — تُستخدم بكل مكان نقدر نعرض فيه <img> بدل نص
+const statusIcons: Record<string,string> = {
+  pending:pendingIcon, confirmed:confirmedIcon, on_the_way:onTheWayIcon,
+  delivered:deliveredIcon, collected:collectedIcon, rejected:rejectedIcon,
 };
 const statusColors: Record<string,string> = {
   pending:"#f59e0b", confirmed:"#22c55e", on_the_way:"#3b82f6",
@@ -32,14 +56,14 @@ const statusColors: Record<string,string> = {
 };
 
 const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
-  { key:"orders",        icon:"📦", label:"الطلبات",         group:"main" },
-  { key:"products",      icon:"💍", label:"المنتجات",        group:"main" },
-  { key:"customization", icon:"🎨", label:"التخصيص",         group:"main" },
-  { key:"customers",     icon:"👥", label:"العملاء",         group:"main" },
-  { key:"notifications", icon:"🔔", label:"الإشعارات",       group:"main" },
-  { key:"stats",         icon:"📊", label:"الإحصائيات",      group:"main" },
-  { key:"store",         icon:"⚙️", label:"إعدادات المتجر",  group:"settings" },
-  { key:"telegram",      icon:"✈️", label:"إعدادات Telegram",group:"settings" },
+  { key:"orders",        icon:ordersIcon,          label:"الطلبات",         group:"main" },
+  { key:"products",      icon:productsIcon,        label:"المنتجات",        group:"main" },
+  { key:"customization", icon:customizationIcon,   label:"التخصيص",         group:"main" },
+  { key:"customers",     icon:customersIcon,       label:"العملاء",         group:"main" },
+  { key:"notifications", icon:notificationsIcon,   label:"الإشعارات",       group:"main" },
+  { key:"stats",         icon:statisticsIcon,      label:"الإحصائيات",      group:"main" },
+  { key:"store",         icon:settingIcon,         label:"إعدادات المتجر",  group:"settings" },
+  { key:"telegram",      icon:telegramSettingIcon, label:"إعدادات Telegram",group:"settings" },
 ];
 
 export default function Admin() {
@@ -111,7 +135,7 @@ export default function Admin() {
 
       await batch.commit();
 
-      showToast(`${statusIcons[status]} ${statusLabels[status]}`, "success");
+      showToast(`${statusEmojis[status]} ${statusLabels[status]}`, "success");
 
       // Award loyalty balance when order is completed
       if (status === "delivered" || status === "collected") {
@@ -193,7 +217,7 @@ export default function Admin() {
               {navItems.filter(n=>n.group===group).map(item => {
                 const active = tab === item.key;
                 return (
-                  <button key={item.key} onClick={()=>setTab(item.key)} title={item.label}
+                  <button key={item.key} onClick={()=>setTab(item.key)} title={item.label} className="btn-3d"
                     style={{
                       width:"100%", padding: sidebarOpen ? "10px 12px" : "10px", borderRadius:"10px",
                       border:"none", background:active?"rgba(212,175,55,0.12)":"transparent",
@@ -205,7 +229,7 @@ export default function Admin() {
                     }}
                     onMouseEnter={e => !active && (e.currentTarget.style.background="rgba(255,255,255,0.04)")}
                     onMouseLeave={e => !active && (e.currentTarget.style.background="transparent")}>
-                    <span style={{ fontSize:"16px", flexShrink:0 }}>{item.icon}</span>
+                    <img src={item.icon} alt="" style={{ width:"18px", height:"18px", flexShrink:0, objectFit:"contain", filter:"invert(1)" }} />
                     {sidebarOpen && <span style={{ whiteSpace:"nowrap" }}>{item.label}</span>}
                     {item.key==="notifications" && pendingCount>0 && (
                       <span style={{ marginRight:"auto", background:"#ef4444", color:"white", borderRadius:"99px", padding:"1px 6px", fontSize:"10px", fontWeight:"800", minWidth:"18px", textAlign:"center" }}>
@@ -221,7 +245,7 @@ export default function Admin() {
         </div>
 
         <div style={{ padding:"10px 8px", borderTop:"1px solid var(--border)" }}>
-          <button onClick={()=>signOut(auth)} title="تسجيل الخروج"
+          <button onClick={()=>signOut(auth)} title="تسجيل الخروج" className="btn-3d"
             style={{ width:"100%", padding: sidebarOpen?"10px 12px":"10px", borderRadius:"10px", border:"none", background:"transparent", color:"#ef4444", cursor:"pointer", fontSize:"13px", display:"flex", alignItems:"center", gap:"10px", fontFamily:"inherit", transition:"var(--transition)" }}
             onMouseEnter={e => e.currentTarget.style.background="rgba(239,68,68,0.08)"}
             onMouseLeave={e => e.currentTarget.style.background="transparent"}>
@@ -234,8 +258,9 @@ export default function Admin() {
       {/* ── Main content ── */}
       <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column" }}>
         <div style={{ background:"#080b14", borderBottom:"1px solid var(--border)", padding:"0 20px", height:"64px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", position:"sticky", top:0, zIndex:40 }}>
-          <h2 className="font-display" style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700", margin:0 }}>
-            {navItems.find(n=>n.key===tab)?.icon} {navItems.find(n=>n.key===tab)?.label}
+          <h2 className="font-display" style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700", margin:0, display:"flex", alignItems:"center", gap:"8px" }}>
+            <img src={navItems.find(n=>n.key===tab)?.icon} alt="" style={{ width:"18px", height:"18px", objectFit:"contain", filter:"invert(1)" }} />
+            {navItems.find(n=>n.key===tab)?.label}
           </h2>
           <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
             {pendingCount>0 && (
@@ -321,10 +346,11 @@ export default function Admin() {
 
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"16px" }}>
                 {["all","pending","confirmed","on_the_way","delivered","collected","rejected"].map(f=>(
-                  <button key={f} onClick={()=>setFilter(f)}
-                    style={{ padding:"5px 12px", borderRadius:"99px", border:"1px solid var(--border)", background:filter===f?"var(--gold)":"transparent", color:filter===f?"#000":"var(--text-muted)", cursor:"pointer", fontSize:"11px", fontWeight:filter===f?"700":"400", fontFamily:"inherit", transition:"var(--transition)" }}>
-                    {f==="all"?"الكل":`${statusIcons[f]} ${statusLabels[f]}`}
-                    {f!=="all" && <span style={{ marginRight:"4px", opacity:0.6 }}>({orders.filter(o=>o.status===f).length})</span>}
+                  <button key={f} onClick={()=>setFilter(f)} className="btn-3d"
+                    style={{ padding:"5px 12px", borderRadius:"99px", border:"1px solid var(--border)", background:filter===f?"var(--gold)":"transparent", color:filter===f?"#000":"var(--text-muted)", cursor:"pointer", fontSize:"11px", fontWeight:filter===f?"700":"400", fontFamily:"inherit", transition:"var(--transition)", display:"inline-flex", alignItems:"center", gap:"5px" }}>
+                    {f!=="all" && <img src={statusIcons[f]} alt="" style={{ width:"13px", height:"13px", objectFit:"contain", filter:filter===f?"none":"invert(1)" }} />}
+                    {f==="all"?"الكل":statusLabels[f]}
+                    {f!=="all" && <span style={{ opacity:0.6 }}>({orders.filter(o=>o.status===f).length})</span>}
                   </button>
                 ))}
               </div>
@@ -352,8 +378,9 @@ export default function Admin() {
                         <div>
                           <div style={{ display:"flex", alignItems:"center", gap:"8px", flexWrap:"wrap" }}>
                             <span style={{ color:"var(--gold)", fontWeight:"800", fontSize:"14px" }}>#{order.orderNumber}</span>
-                            <span style={{ background:c+"22", color:c, padding:"2px 10px", borderRadius:"99px", fontSize:"10px", border:`1px solid ${c}33`, fontWeight:"700" }}>
-                              {statusIcons[order.status]} {statusLabels[order.status]}
+                            <span style={{ background:c+"22", color:c, padding:"2px 10px", borderRadius:"99px", fontSize:"10px", border:`1px solid ${c}33`, fontWeight:"700", display:"inline-flex", alignItems:"center", gap:"5px" }}>
+                              <img src={statusIcons[order.status]} alt="" style={{ width:"12px", height:"12px", objectFit:"contain", filter:"invert(1)" }} />
+                              {statusLabels[order.status]}
                             </span>
                             {order.status==="pending" && (
                               <span style={{ background:"rgba(245,158,11,0.15)", color:"#f59e0b", padding:"2px 8px", borderRadius:"99px", fontSize:"10px", border:"1px solid rgba(245,158,11,0.3)", fontWeight:"700" }}>
@@ -415,8 +442,10 @@ export default function Admin() {
                                 background:idx<=curIdx?"rgba(212,175,55,0.1)":"transparent",
                                 border:`1px solid ${idx<=curIdx?"var(--gold-border)":"var(--border)"}`,
                                 color:idx<=curIdx?"var(--gold)":"var(--text-muted)",
-                                fontSize:"10px", cursor:"pointer", whiteSpace:"nowrap", transition:"var(--transition)", fontWeight:idx===curIdx?"700":"400" }}>
-                              {statusIcons[step]} {statusLabels[step]}
+                                fontSize:"10px", cursor:"pointer", whiteSpace:"nowrap", transition:"var(--transition)", fontWeight:idx===curIdx?"700":"400",
+                                display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
+                              <img src={statusIcons[step]} alt="" style={{ width:"14px", height:"14px", objectFit:"contain", filter:"invert(1)" }} />
+                              {statusLabels[step]}
                             </div>
                           ))}
                         </div>
@@ -434,7 +463,9 @@ export default function Admin() {
                         {order.status==="on_the_way"            && <button onClick={()=>updateStatus(order.id,"delivered")}  className="btn-3d" style={ab("#8b5cf6")}>📦 تم التوصيل</button>}
                         {order.status==="confirmed"  && !isDel  && <button onClick={()=>updateStatus(order.id,"collected")}  className="btn-3d" style={ab("#8b5cf6")}>🤝 تم الاستلام</button>}
                         <a href={`https://wa.me/${customer.phone}`} target="_blank" rel="noreferrer" className="btn-3d"
-                          style={{...ab("#25D366"),textDecoration:"none"}}>💬 واتساب</a>
+                          style={{...ab("#25D366"),textDecoration:"none",display:"inline-flex",alignItems:"center",gap:"5px"}}>
+                          <img src={whatsappIcon} alt="" style={{ width:"12px", height:"12px", objectFit:"contain", filter:"invert(1)" }} /> واتساب
+                        </a>
                         <button onClick={()=>deleteOrder(order.id)} className="btn-3d" style={{...ab("#ef4444"),marginRight:"auto"}}>🗑️ حذف</button>
                       </div>
                     </div>

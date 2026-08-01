@@ -4,6 +4,10 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { CartContext } from "./CartContext";
 import { useToast } from "./Toast";
+import customerServiceIcon from "./assets/icons/customer-service.png";
+import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
+import qualityIcon from "./assets/icons/quality.png";
+import securePaymentIcon from "./assets/icons/secure-payment.png";
 
 function Cart() {
   const { cart, addToCart, decreaseQuantity, removeFromCart, coupon, applyCoupon, clearCoupon } = useContext(CartContext);
@@ -161,13 +165,17 @@ function Cart() {
       {/* Feature strip */}
       <div className="card" style={{ marginTop: "18px", padding: 0, overflow: "hidden", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
         {[
-          { icon: "🎧", title: "دعم على مدار الساعة", desc: "فريق الدعم جاهز لمساعدتك 24/7" },
-          { icon: "🔒", title: "دفع آمن", desc: "جميع عمليات الدفع مشفرة 100%" },
-          { icon: "🚚", title: "شحن سريع", desc: "توصيل طلبك بسرعة داخل البحرين" },
-          { icon: "💎", title: "جودة مضمونة", desc: "ضمان أصلية 925 على جميع المنتجات" },
+          { icon: customerServiceIcon, title: "دعم على مدار الساعة", desc: "فريق الدعم جاهز لمساعدتك 24/7" },
+          { icon: securePaymentIcon, title: "دفع آمن", desc: "جميع عمليات الدفع مشفرة 100%" },
+          { icon: fastDeliveryIcon, title: "شحن سريع", desc: "توصيل طلبك بسرعة داخل البحرين" },
+          { icon: qualityIcon, title: "جودة مضمونة", desc: "ضمان أصلية 925 على جميع المنتجات" },
         ].map((f, i, arr) => (
           <div key={f.title} style={{ textAlign: "center", padding: "20px 14px", borderInlineEnd: i < arr.length - 1 ? "1px solid #222" : "none" }}>
-            <div style={{ fontSize: "22px", marginBottom: "8px" }}>{f.icon}</div>
+            <div style={{ fontSize: "22px", marginBottom: "8px" }}>
+              {f.icon.includes(".png")
+                ? <img src={f.icon} alt="" style={{ width: "22px", height: "22px", objectFit: "contain", filter: "invert(1)", margin: "0 auto" }} />
+                : f.icon}
+            </div>
             <p style={{ color: "#D4AF37", fontSize: "13px", fontWeight: "700", margin: "0 0 4px" }}>{f.title}</p>
             <p style={{ color: "#777", fontSize: "11px", margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
           </div>

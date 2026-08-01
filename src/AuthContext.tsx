@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signOut, updateProfile,
+  GoogleAuthProvider, signInWithPopup,
   type User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
@@ -25,6 +26,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   login:             (email: string, password: string) => Promise<void>;
+  loginWithGoogle:   () => Promise<void>;
   register:          (name: string, email: string, password: string) => Promise<void>;
   logout:            () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
@@ -97,6 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
+  const loginWithGoogle = async () => {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+    // ✅ إنشاء البروفايل عند أول دخول عبر Google يصير تلقائياً من نفس onSnapshot fallback بالأعلى
+  };
+
   const register = async (name: string, email: string, password: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
@@ -123,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = !!user && user.email?.toLowerCase() === ADMIN_EMAIL?.toLowerCase();
 
   return (
-    <AuthContext.Provider value={{ user, profile, isAdmin, loading, login, register, logout, updateUserProfile, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, isAdmin, loading, login, loginWithGoogle, register, logout, updateUserProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

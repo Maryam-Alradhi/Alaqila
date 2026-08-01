@@ -176,7 +176,7 @@ function Product() {
                   const inCart = getCartQty(size);
                   const remaining = Number(qty) - inCart;
                   return (
-                    <button key={size} onClick={() => qty > 0 && remaining > 0 && setSelectedSize(size)}
+                    <button key={size} onClick={() => qty > 0 && remaining > 0 && setSelectedSize(size)} className="btn-3d"
                       style={{
                         padding: "8px 14px", borderRadius: "8px",
                         border: selectedSize === size ? "2px solid #D4AF37" : "1px solid #444",

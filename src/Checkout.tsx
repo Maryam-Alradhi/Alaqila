@@ -5,6 +5,10 @@ import { db } from "./firebase";
 import { useToast } from "./Toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
+import qualityIcon from "./assets/icons/quality.png";
+import customerServiceIcon from "./assets/icons/customer-service.png";
+import securePaymentIcon from "./assets/icons/secure-payment.png";
 
 function checkRateLimit(): boolean {
   const key = "order_times"; const now = Date.now(); const win = 10*60*1000;
@@ -321,7 +325,7 @@ export default function Checkout() {
                   ) : (
                     <div style={{ position:"relative", display:"inline-block", width:"100%" }}>
                       <img src={receiptPreview} alt="إيصال" style={{ width:"100%", maxHeight:"200px", objectFit:"cover", borderRadius:"var(--radius)", border:"2px solid var(--gold-border)" }} />
-                      <button onClick={()=>{setReceiptFile(null);setReceiptPreview(null);if(fileInputRef.current)fileInputRef.current.value="";}}
+                      <button onClick={()=>{setReceiptFile(null);setReceiptPreview(null);if(fileInputRef.current)fileInputRef.current.value="";}} className="btn-3d"
                         style={{ position:"absolute", top:"8px", left:"8px", background:"rgba(0,0,0,0.7)", border:"1px solid #ef4444", color:"#ef4444", borderRadius:"50%", width:"28px", height:"28px", cursor:"pointer", fontSize:"14px", display:"flex", alignItems:"center", justifyContent:"center" }}>
                         ✕
                       </button>
@@ -378,7 +382,7 @@ export default function Checkout() {
           </button>
 
           <p style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", color:"var(--text-muted)", fontSize:"11px", marginTop:"14px" }}>
-            🔒 جميع المعاملات آمنة ومشفرة
+            <img src={securePaymentIcon} alt="" style={{ width:"14px", height:"14px", objectFit:"contain", filter:"invert(1)" }} /> جميع المعاملات آمنة ومشفرة
           </p>
         </div>
 
@@ -434,9 +438,9 @@ export default function Checkout() {
           <div className="card" style={{ padding:"20px" }}>
             <p className="section-title">لماذا تختارنا؟</p>
             <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-              {[["⚡","توصيل سريع وآمن"],["🏅","منتجات عالية الجودة"],["🎧","دعم العملاء 24/7"]].map(([icon,label]) => (
+              {[[fastDeliveryIcon,"توصيل سريع وآمن"],[qualityIcon,"منتجات عالية الجودة"],[customerServiceIcon,"دعم العملاء 24/7"]].map(([icon,label]) => (
                 <div key={label} style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                  <span style={{ fontSize:"16px" }}>{icon}</span>
+                  <img src={icon} alt="" style={{ width:"16px", height:"16px", objectFit:"contain", filter:"invert(1)" }} />
                   <span style={{ color:"var(--text-dim)", fontSize:"13px" }}>{label}</span>
                 </div>
               ))}
@@ -445,7 +449,9 @@ export default function Checkout() {
 
           {/* جودة تفوق التوقعات */}
           <div className="card" style={{ padding:"20px", display:"flex", alignItems:"center", gap:"14px" }}>
-            <div className="icon-badge-3d" style={{ width:"44px", height:"44px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", flexShrink:0 }}>💎</div>
+            <div className="icon-badge-3d" style={{ width:"44px", height:"44px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", flexShrink:0 }}>
+              <img src={qualityIcon} alt="" style={{ width:"20px", height:"20px", objectFit:"contain" }} />
+            </div>
             <div>
               <p style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700", margin:0 }}>جودة تفوق التوقعات</p>
               <p style={{ color:"var(--text-muted)", fontSize:"11px", margin:"4px 0 0", lineHeight:1.6 }}>نختار أجود الخامات لضمان أعلى جودة</p>

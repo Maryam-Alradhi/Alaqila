@@ -95,7 +95,7 @@ export default function StoreSettings() {
       {/* Tab bar */}
       <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key as any)}
+          <button key={t.key} onClick={() => setTab(t.key as any)} className="btn-3d"
             style={{ padding:"8px 16px", borderRadius:"var(--radius-sm)", border:`1px solid ${tab===t.key?"var(--gold)":"var(--border)"}`, background:tab===t.key?"var(--gold-dim)":"transparent", color:tab===t.key?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:tab===t.key?"700":"400", fontFamily:"inherit", transition:"var(--transition)" }}>
             {t.label}
           </button>
@@ -235,7 +235,7 @@ export default function StoreSettings() {
                     <p style={{ color:"var(--text)", fontSize:"13px", fontWeight:"600", margin:0 }}>{cat.label}</p>
                     <p style={{ color:"var(--text-muted)", fontSize:"11px", margin:"2px 0 0" }}>{cat.value}</p>
                   </div>
-                  <button onClick={() => removeCategory(cat.value)}
+                  <button onClick={() => removeCategory(cat.value)} className="btn-3d"
                     style={{ padding:"5px 10px", background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"7px", color:"#ef4444", cursor:"pointer", fontSize:"11px", fontWeight:"700" }}>
                     🗑️ حذف
                   </button>

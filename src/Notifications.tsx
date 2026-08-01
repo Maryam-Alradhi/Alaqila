@@ -84,6 +84,7 @@ export default function Notifications() {
         </div>
         <button
           onClick={() => setSoundEnabled(!soundEnabled)}
+          className="btn-3d"
           style={{ padding:"7px 14px", background:soundEnabled?"rgba(212,175,55,0.1)":"transparent", border:`1px solid ${soundEnabled?"var(--gold-border)":"var(--border)"}`, borderRadius:"var(--radius-sm)", color:soundEnabled?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit" }}>
           {soundEnabled ? "🔊 صوت مفعّل" : "🔇 صوت معطّل"}
         </button>

@@ -103,6 +103,7 @@ export function ImageUploader({ value, onChange, label }: { value: string; onCha
             />
             <button
               onClick={e => { e.stopPropagation(); onChange(""); }}
+              className="btn-3d"
               style={{ position:"absolute", top:"-6px", right:"-6px", background:"#ef4444", border:"none", borderRadius:"50%", width:"22px", height:"22px", color:"white", cursor:"pointer", fontSize:"12px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"bold" }}
             >×</button>
             <p style={{ color:"var(--text-muted)", fontSize:"11px", marginTop:"6px" }}>اضغط لتغيير الصورة</p>
@@ -126,7 +127,7 @@ export function ImageUploader({ value, onChange, label }: { value: string; onCha
         value={value.startsWith("http") && !value.includes("firebasestorage") ? value : ""}
         onChange={e => onChange(e.target.value)}
         placeholder="https://..."
-        style={{ width:"100%", padding:"9px 12px", marginTop:"6px", borderRadius:"var(--radius-sm)", border:"1px solid var(--border)", background:"var(--bg-input)", color:"var(--text)", fontSize:"12px", boxSizing:"border-box", outline:"none" }}
+        style={{ width:"100%", padding:"9px 12px", marginTop:"6px", borderRadius:"var(--radius-sm)", border:"1px solid var(--border)", background:"var(--bg-input)", color:"var(--text)", fontSize:"12px", boxSizing:"border-box", outline:"none", boxShadow:"inset 0 2px 5px rgba(0,0,0,0.3)" }}
         dir="ltr"
       />
 
@@ -277,7 +278,7 @@ export default function ManageProducts() {
         <button onClick={openAdd} className="btn-gold" style={{ padding:"9px 18px", fontSize:"13px", whiteSpace:"nowrap" }}>
           + إضافة منتج
         </button>
-        <button onClick={load}
+        <button onClick={load} className="btn-3d"
           style={{ padding:"9px 14px", background:"transparent", border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", color:"var(--text-muted)", cursor:"pointer", fontSize:"13px" }}>
           🔄
         </button>
@@ -349,11 +350,11 @@ export default function ManageProducts() {
                   </span>
                 </div>
                 <div style={{ display:"flex", gap:"5px" }}>
-                  <button onClick={() => openEdit(p)}
+                  <button onClick={() => openEdit(p)} className="btn-3d"
                     style={{ flex:1, padding:"6px", background:"rgba(212,175,55,0.1)", color:"var(--gold)", border:"1px solid var(--gold-border)", borderRadius:"7px", cursor:"pointer", fontSize:"11px", fontWeight:"700" }}>
                     ✏️ تعديل
                   </button>
-                  <button onClick={() => handleDelete(p.id, p.name)}
+                  <button onClick={() => handleDelete(p.id, p.name)} className="btn-3d"
                     style={{ flex:1, padding:"6px", background:"rgba(239,68,68,0.08)", color:"#ef4444", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"7px", cursor:"pointer", fontSize:"11px", fontWeight:"700" }}>
                     🗑️ حذف
                   </button>
@@ -377,7 +378,7 @@ export default function ManageProducts() {
                 <h3 style={{ color:"var(--gold)", margin:0, fontSize:"16px", fontWeight:"800" }}>
                   {editId ? "✏️ تعديل المنتج" : "➕ إضافة منتج جديد"}
                 </h3>
-                <button onClick={() => setShowForm(false)}
+                <button onClick={() => setShowForm(false)} className="btn-3d"
                   style={{ background:"rgba(255,255,255,0.06)", border:"none", borderRadius:"50%", width:"30px", height:"30px", color:"var(--text-muted)", fontSize:"16px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
               </div>
 
@@ -435,7 +436,7 @@ export default function ManageProducts() {
                       { key:"isNew", label:"✨ منتج جديد" },
                       { key:"isFeatured", label:"⭐ مميز" },
                     ].map(badge => (
-                      <button key={badge.key}
+                      <button key={badge.key} className="btn-3d"
                         onClick={() => setForm(f => ({ ...f, [badge.key]: !(f as any)[badge.key] }))}
                         style={{ padding:"8px 16px", borderRadius:"99px", border:`1.5px solid ${(form as any)[badge.key]?"var(--gold)":"var(--border)"}`, background:(form as any)[badge.key]?"var(--gold)":"transparent", color:(form as any)[badge.key]?"#000":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
                         {badge.label}
@@ -448,7 +449,7 @@ export default function ManageProducts() {
                 {form.category === "rings" && (
                   <div style={{ display:"flex", gap:"10px" }}>
                     {[true, false].map(v => (
-                      <button key={String(v)} onClick={() => setForm(f => ({ ...f, hasSizes: v }))}
+                      <button key={String(v)} onClick={() => setForm(f => ({ ...f, hasSizes: v }))} className="btn-3d"
                         style={{ flex:1, padding:"10px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.hasSizes===v?"var(--gold)":"var(--border)"}`, background:form.hasSizes===v?"var(--gold-dim)":"transparent", color:form.hasSizes===v?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"13px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
                         {v ? "💍 بمقاسات" : "📦 بكمية فقط"}
                       </button>
