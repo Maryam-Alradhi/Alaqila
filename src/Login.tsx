@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 import { auth } from "./firebase";
@@ -25,9 +25,21 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const { login, loginWithGoogle, register } = useAuth();
+  const { user, login, loginWithGoogle, register } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const goAfterLogin = (loggedInEmail: string) => {
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL as string;
+    if (adminEmail && loggedInEmail.toLowerCase() === adminEmail.toLowerCase()) navigate("/manage-store-aqeela");
+    else navigate("/shop");
+  };
+
+  // ✅ ننتظر تحديث الـ context الفعلي قبل التنقّل — التنقّل مباشرة بعد await login() يصير قبل ما
+  // isAdmin يتحدّث بالـ React state، فيرجّع يطلع نموذج تسجيل الدخول لين المستخدم يعمل refresh يدوي
+  useEffect(() => {
+    if (user) goAfterLogin(user.email || "");
+  }, [user]);
 
   const handleForgotPassword = async () => {
     if (!email.trim()) { showToast("أدخل إيميلك أولاً عشان نرسل لك رابط الاستعادة", "warning"); return; }
@@ -39,18 +51,12 @@ export default function Login() {
     }
   };
 
-  const goAfterLogin = (loggedInEmail: string) => {
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL as string;
-    if (adminEmail && loggedInEmail.toLowerCase() === adminEmail.toLowerCase()) navigate("/manage-store-aqeela");
-    else navigate("/shop");
-  };
-
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       await loginWithGoogle();
       showToast("مرحباً بعودتك! 👋", "success");
-      goAfterLogin(auth.currentUser?.email || "");
+      // ✅ التنقّل يصير تلقائياً من الـ useEffect فوق بمجرد ما user يتحدّث
     } catch {
       showToast("تعذّر تسجيل الدخول بجوجل، حاول مجدداً", "error");
     } finally { setLoading(false); }
@@ -73,11 +79,11 @@ export default function Login() {
         await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         await login(email.trim(), password);
         showToast("مرحباً بعودتك! 👋", "success");
-        goAfterLogin(email.trim());
+        // ✅ التنقّل يصير تلقائياً من الـ useEffect بمجرد ما user يتحدّث
       } else {
         await register(name.trim(), email.trim(), password);
         showToast("تم إنشاء حسابك 🎉", "success");
-        navigate("/shop");
+        // ✅ التنقّل يصير تلقائياً من الـ useEffect بمجرد ما user يتحدّث
       }
     } catch (err: any) {
       const c = err?.code || "";
