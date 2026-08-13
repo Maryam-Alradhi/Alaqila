@@ -6,7 +6,7 @@ import { useToast } from "./Toast";
 import { awardLoyaltyBalance } from "./LoyaltyService";
 import ManageProducts from "./ManageProducts";
 import CustomizationManager from "./CustomizationManager";
-import TelegramSettings from "./TelegramSettings";
+import NotificationSettings from "./NotificationSettings";
 import StoreSettings from "./StoreSettings";
 import Customers from "./Customers";
 import Notifications from "./Notifications";
@@ -29,7 +29,7 @@ import deliveredIcon from "./assets/icons/delivered.png";
 import collectedIcon from "./assets/icons/collected.png";
 import rejectedIcon from "./assets/icons/rejected.png";
 
-type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"telegram"|"store";
+type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"ntfy"|"store";
 type OrderStatus = "pending"|"confirmed"|"on_the_way"|"delivered"|"collected"|"rejected";
 
 const deliverySteps = ["pending","confirmed","on_the_way","delivered"];
@@ -63,7 +63,7 @@ const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
   { key:"notifications", icon:notificationsIcon,   label:"الإشعارات",       group:"main" },
   { key:"stats",         icon:statisticsIcon,      label:"الإحصائيات",      group:"main" },
   { key:"store",         icon:settingIcon,         label:"إعدادات المتجر",  group:"settings" },
-  { key:"telegram",      icon:telegramSettingIcon, label:"إعدادات Telegram",group:"settings" },
+  { key:"ntfy",          icon:telegramSettingIcon, label:"إشعارات الطلبات",group:"settings" },
 ];
 
 export default function Admin() {
@@ -329,7 +329,7 @@ export default function Admin() {
           {tab==="customization" && <div className="animate-fadeIn"><CustomizationManager /></div>}
           {tab==="customers"     && <div className="animate-fadeIn"><Customers /></div>}
           {tab==="notifications" && <div className="animate-fadeIn"><Notifications /></div>}
-          {tab==="telegram"      && <div className="animate-fadeIn"><TelegramSettings /></div>}
+          {tab==="ntfy"          && <div className="animate-fadeIn"><NotificationSettings /></div>}
           {tab==="store"         && <div className="animate-fadeIn"><StoreSettings /></div>}
 
           {/* ── Orders ── */}
@@ -405,7 +405,7 @@ export default function Admin() {
                         <span style={{ color:"var(--text-dim)" }}>💳 {order.paymentMethod==="benefit"?"بنفت":order.paymentMethod==="balance"?"رصيد":"كاش"}</span>
                         {order.hasReceipt && (
                           <span style={{ color:"#22c55e", fontSize:"12px", display:"flex", alignItems:"center", gap:"4px" }}>
-                            🧾 إيصال الدفع أُرسل للتلجرام ✅
+                            🧾 إيصال الدفع أُرسل بالإشعار ✅
                           </span>
                         )}
                       </div>

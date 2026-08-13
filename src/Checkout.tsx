@@ -5,6 +5,7 @@ import { db } from "./firebase";
 import { useToast } from "./Toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import AuthGateModal from "./AuthGateModal";
 import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
 import qualityIcon from "./assets/icons/quality.png";
 import customerServiceIcon from "./assets/icons/customer-service.png";
@@ -23,15 +24,45 @@ function generateOrderNumber(): string {
   return `AQ-${Array.from(arr).map(b=>b.toString(16).padStart(2,"0")).join("").toUpperCase()}`;
 }
 
-// تحويل الصورة إلى Base64 — تُحفظ مؤقتاً بمستند الطلب فقط، وترسلها Cloud Function لتلجرام من السيرفر
-// (بدل ما يرسلها المتصفح مباشرة، عشان توكن البوت ما يوصل لجهاز العميل أبداً)
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve((reader.result as string).split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+// ✅ إشعار فوري عبر ntfy — يُرسل مباشرة من المتصفح وقت تأكيد الطلب (بدون Cloud Function)
+// اسم القناة مو سري بنفس درجة توكن بوت، فإرساله من المتصفح مباشرة آمن بما يكفي
+async function sendNtfyNotification(topic: string, orderNumber: string, orderData: any, receiptFile: File | null) {
+  if (!topic) return;
+  try {
+    const items: any[] = Array.isArray(orderData.items) ? orderData.items : [];
+    const itemsList = items.map(item => {
+      const price = Number(item.price || 0), qty = Number(item.quantity || 0);
+      const custLines = Array.isArray(item.customization) && item.customization.length
+        ? "\n" + item.customization.map((c: any) => `   🎨 ${c.label}: ${c.value}`).join("\n")
+        : "";
+      return `• ${item.name || ""}${item.selectedSize ? ` (${item.selectedSize})` : ""} × ${qty} — ${(price * qty).toFixed(3)} BD${custLines}`;
+    }).join("\n");
+
+    const isDelivery = orderData.deliveryType === "delivery";
+    const delivLine = isDelivery
+      ? `📍 العنوان: ${orderData.customer?.address || ""}\n🚗 توصيل: ${Number(orderData.deliveryFee || 0)} BD`
+      : `🤝 الاستلام: شخصي`;
+    const paymentLabel = orderData.paymentMethod === "cod" ? "كاش عند الاستلام" : orderData.paymentMethod === "benefit" ? "Benefit" : "رصيد";
+    const codLine = orderData.paymentMethod === "cod" ? "\n⚠️ لم يتم الدفع بعد — يُدفع كاش عند الاستلام" : "";
+
+    const message = `👤 الاسم: ${orderData.customer?.name || ""}\n📞 الهاتف: ${orderData.customer?.phone || ""}\n${delivLine}\n💳 الدفع: ${paymentLabel}${codLine}\n\n📦 المنتجات:\n${itemsList}\n\n💰 الإجمالي: ${Number(orderData.total || 0).toFixed(3)} BD`;
+
+    await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
+      method: "POST",
+      headers: { "Title": `New Order - ${orderNumber}`, "Priority": "high", "Tags": "shopping_bags" },
+      body: message,
+    });
+
+    if (receiptFile) {
+      await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
+        method: "PUT",
+        headers: { "Filename": "receipt.jpg", "Title": `Receipt - ${orderNumber}` },
+        body: receiptFile,
+      });
+    }
+  } catch {
+    // ✅ فشل الإشعار ما يوقف الطلب — الطلب نفسه محفوظ بقاعدة البيانات على أي حال
+  }
 }
 
 const steps = [
@@ -43,11 +74,12 @@ const steps = [
 
 export default function Checkout() {
   const { cart, clearCart, coupon, clearCoupon } = useContext(CartContext);
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const topRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const [name,        setName]        = useState(profile?.name    || "");
   const [phone,       setPhone]       = useState(profile?.phone   || "");
@@ -58,6 +90,7 @@ export default function Checkout() {
   const [delivery,    setDelivery]    = useState<"delivery"|"pickup"|null>(null);           // ← null = لم يختر بعد
   const [useBalance,  setUseBalance]  = useState(false);
   const [storeSettings, setStoreSettings] = useState<any>({ deliveryFee:"2", loyaltyPercent:"5", loyaltyEnabled:true });
+  const [ntfyTopic, setNtfyTopic] = useState("");
 
   // إيصال الدفع
   const [receiptFile,    setReceiptFile]    = useState<File|null>(null);
@@ -68,6 +101,7 @@ export default function Checkout() {
 
   useEffect(() => {
     getDoc(doc(db,"settings","store")).then(snap => { if (snap.exists()) setStoreSettings(snap.data()); }).catch(()=>{});
+    getDoc(doc(db,"settings","ntfy")).then(snap => { if (snap.exists()) setNtfyTopic(snap.data().topic || ""); }).catch(()=>{});
   }, []);
 
   const DELIVERY_FEE   = Number(storeSettings.deliveryFee ?? 2);
@@ -126,14 +160,7 @@ export default function Checkout() {
         }
       } catch { /* نكمل حتى لو فشل فحص الكمية */ }
 
-      // تحويل الإيصال لـ Base64
-      let receiptBase64 = "";
-      let receiptMime   = "";
-      if (payment==="benefit" && receiptFile) {
-        receiptBase64 = await fileToBase64(receiptFile);
-        receiptMime   = receiptFile.type || "image/jpeg";
-      }
-
+      const hasReceipt = payment==="benefit" && !!receiptFile;
       const orderNumber = generateOrderNumber();
 
       // تنظيف الـ items قبل الحفظ — Firestore لا يقبل undefined أو قيم غير صالحة
@@ -151,9 +178,7 @@ export default function Checkout() {
 
       // حفظ الطلب — نستخدم رقم الطلب نفسه كمعرّف المستند، عشان تتبع الطلب يصير بجلب مباشر (get) بدل استعلام (list)
       // وهذا يخلي قواعد الأمان تقدر تمنع أي شخص من عرض كل الطلبات دفعة وحدة
-      // ✅ إشعار تلجرام (نص + صورة الإيصال) يرسله Cloud Function من السيرفر تلقائياً بمجرد إنشاء هذا المستند —
-      // المتصفح ما يلمس توكن البوت أبداً. صورة الإيصال تُحفظ هنا مؤقتاً فقط وتُمسح فور إرسالها.
-      await setDoc(doc(db,"orders",orderNumber), {
+      const orderData = {
         orderNumber,
         userId:        user?.uid ?? null,
         customer: {
@@ -171,11 +196,14 @@ export default function Checkout() {
         total:         Number(total)         || 0,
         paymentMethod: payment    ?? "cod",
         deliveryType:  delivery   ?? "delivery",
-        hasReceipt:    receiptBase64 !== "",
-        ...(receiptBase64 ? { receiptBase64, receiptMime } : {}),
+        hasReceipt,
         status:        "pending",
         createdAt:     serverTimestamp(),
-      });
+      };
+      await setDoc(doc(db,"orders",orderNumber), orderData);
+
+      // ✅ إشعار فوري مباشرة من المتصفح — نص الطلب + صورة الإيصال (إن وجدت)
+      sendNtfyNotification(ntfyTopic, orderNumber, orderData, hasReceipt ? receiptFile : null);
 
       // خصم الرصيد — مسجلين فقط
       if (useBalance && balanceDiscount>0 && user) {
@@ -201,6 +229,9 @@ export default function Checkout() {
       <button onClick={()=>navigate("/shop")} className="btn-gold" style={{ marginTop:"20px" }}>العودة للمتجر</button>
     </div>
   );
+
+  // ✅ إتمام الطلب يحتاج تسجيل دخول — نعرض box فوق نفس الصفحة بدل ما ننقله لصفحة ثانية تلخبطه
+  if (!authLoading && !user) return <AuthGateModal />;
 
   const BENEFIT_IBAN = storeSettings.iban || (import.meta.env.VITE_BENEFIT_IBAN as string);
 

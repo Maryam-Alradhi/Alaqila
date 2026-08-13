@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
+import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
 import pendingIcon from "./assets/icons/pending.png";
 import confirmedIcon from "./assets/icons/confirmed.png";
@@ -30,13 +31,6 @@ const statusColors: Record<string,string> = {
   delivered:"#8b5cf6", collected:"#8b5cf6", rejected:"#ef4444",
 };
 
-// ── شرح عام لمراحل الطلب — يظهر بس بالحالة الأولية قبل أي بحث ──
-const explainerSteps = [
-  { icon:"✅", label:"تم استلام الطلب" },
-  { icon:"🚚", label:"قيد التجهيز" },
-  { icon:"📦", label:"تم الشحن" },
-  { icon:"📝", label:"تم التسليم" },
-];
 const trustFeatures = [
   { icon:customerServiceIcon, title:"دعم على مدار الساعة", desc:"فريق الدعم جاهز لمساعدتك 24/7" },
   { icon:securePaymentIcon, title:"دفع آمن",              desc:"جميع عمليات الدفع مشفرة 100%" },
@@ -48,17 +42,17 @@ function TrackOrder() {
   const { orderNumber } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [order,      setOrder]      = useState<any>(null);
   const [loading,    setLoading]    = useState(true);
   const [notFound,   setNotFound]   = useState(false);
-  const [searchVal,  setSearchVal]  = useState(orderNumber || "");
   const [cancelling, setCancelling] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
-  const [searched,   setSearched]   = useState(!!orderNumber);
+  const [myOrders,    setMyOrders]    = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   const fetchOrder = async (num: string) => {
     if (!num.trim()) return;
-    setSearched(true);
     setLoading(true); setNotFound(false); setOrder(null); setShowInvoice(false);
     try {
       // ✅ جلب مباشر بمعرّف الطلب (مو استعلام) — يمنع أي شخص من سرد كل الطلبات
@@ -78,6 +72,21 @@ function TrackOrder() {
     if (orderNumber) fetchOrder(orderNumber);
     else setLoading(false);
   }, [orderNumber]);
+
+  // ✅ تتبع الطلب صار يتطلب تسجيل دخول — نعرض طلبات المستخدم تلقائياً بدل ما يدخل رقم الطلب يدوياً
+  useEffect(() => {
+    if (orderNumber || authLoading) return;
+    if (!user) { navigate("/login"); return; }
+    (async () => {
+      setOrdersLoading(true);
+      try {
+        const q = query(collection(db,"orders"), where("userId","==",user.uid), orderBy("createdAt","desc"));
+        const snap = await getDocs(q);
+        setMyOrders(snap.docs.map(d => ({ id:d.id, ...d.data() })));
+      } catch { setMyOrders([]); }
+      finally { setOrdersLoading(false); }
+    })();
+  }, [orderNumber, user, authLoading]);
 
   const handleCancel = async () => {
     if (!order || order.status !== "pending") return;
@@ -99,7 +108,7 @@ function TrackOrder() {
   const currentIdx = order ? steps.findIndex(s => s.key === order.status) : -1;
   const isDone = order?.status === "delivered" || order?.status === "collected";
   const canCancel = order?.status === "pending";
-  const isIdle = !searched && !loading && !order && !notFound;
+  const showList = !orderNumber;
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", direction:"rtl" }}>
@@ -125,56 +134,68 @@ function TrackOrder() {
           تتبع طلبك
         </h1>
         <p style={{ color:"var(--text-muted)", fontSize:"14px", marginBottom:"30px" }}>
-          تابع حالة طلبك في كل خطوة حتى وصوله إليك
+          {showList ? "كل طلباتك بمكان واحد" : "تابع حالة طلبك في كل خطوة حتى وصوله إليك"}
         </p>
 
-        {/* Search */}
-        <div style={{ display:"flex", gap:"10px", maxWidth:"460px", margin:"0 auto" }}>
-          <div style={{ position:"relative", flex:1 }}>
-            <span style={{ position:"absolute", top:"50%", left:"14px", transform:"translateY(-50%)", fontSize:"15px", opacity:0.6 }}>🔖</span>
-            <input
-              placeholder="أدخل رقم الطلب (AQ-XXXXXX)"
-              value={searchVal}
-              onChange={e => setSearchVal(e.target.value)}
-              onKeyDown={e => e.key==="Enter" && fetchOrder(searchVal)}
-              className="inp"
-              dir="ltr"
-              style={{ paddingLeft:"38px" }}
-            />
-          </div>
-          <button onClick={() => fetchOrder(searchVal)} className="btn-gold btn-3d" style={{ padding:"12px 22px", whiteSpace:"nowrap" }}>
-            بحث
+        {!showList && (
+          <button onClick={() => navigate("/track")} className="btn-ghost btn-3d" style={{ marginTop:"4px", padding:"11px 24px" }}>
+            ← كل طلباتي
           </button>
-        </div>
-
+        )}
         <button onClick={() => navigate("/shop")} className="btn-ghost btn-3d" style={{ marginTop:"16px", padding:"11px 24px" }}>
           ← العودة للمتجر
         </button>
       </div>
 
-      {/* Idle explainer — process steps + trust features */}
-      {isIdle && (
-        <>
-          <div style={{ padding:"56px 20px 0", maxWidth:"920px", margin:"0 auto" }}>
-            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"center", gap:"0", flexWrap:"wrap" }}>
-              {explainerSteps.map((step, idx) => (
-                <div key={step.label} style={{ display:"flex", alignItems:"flex-start", flex:"1 1 120px", minWidth:"110px" }}>
-                  <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
-                    <div className="icon-badge-3d" style={{ width:"52px", height:"52px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"22px", animationDelay:`${idx*0.3}s` }}>
-                      {step.icon}
-                    </div>
-                    <p style={{ color:"var(--text-dim)", fontSize:"13px", fontWeight:"600", marginTop:"12px", textAlign:"center" }}>{step.label}</p>
-                  </div>
-                  {idx < explainerSteps.length-1 && (
-                    <div style={{ flex:"0 0 auto", width:"100%", maxWidth:"60px", height:"2px", marginTop:"25px", background:"repeating-linear-gradient(90deg, var(--gold-border) 0 6px, transparent 6px 12px)" }} />
-                  )}
-                </div>
-              ))}
+      {/* My orders list — يظهر بدل البحث اليدوي، دايماً بعد تسجيل الدخول */}
+      {showList && (
+        <div style={{ maxWidth:"680px", margin:"0 auto", padding:"40px 16px 70px" }}>
+          {(authLoading || ordersLoading) && (
+            <div style={{ textAlign:"center", padding:"40px" }}>
+              <div className="animate-spin" style={{ width:"36px", height:"36px", border:"3px solid var(--border)", borderTop:"3px solid var(--gold)", borderRadius:"50%", margin:"0 auto 12px" }} />
+              <p style={{ color:"var(--text-muted)" }}>جاري التحميل...</p>
             </div>
-          </div>
+          )}
 
-          <div style={{ padding:"56px 20px 70px", maxWidth:"1100px", margin:"0 auto" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:"18px" }}>
+          {!authLoading && !ordersLoading && myOrders.length === 0 && (
+            <div className="card animate-slideUp" style={{ textAlign:"center", padding:"46px 20px" }}>
+              <div style={{ fontSize:"48px", marginBottom:"12px" }}>📭</div>
+              <p style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700" }}>ما عندك طلبات بعد</p>
+              <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"6px", marginBottom:"20px" }}>أول ما تسوّين طلب، بيبين هنا تلقائياً</p>
+              <button onClick={() => navigate("/shop")} className="btn-gold btn-3d">تصفحي المتجر ✨</button>
+            </div>
+          )}
+
+          {!authLoading && !ordersLoading && myOrders.length > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+              {myOrders.map((o, i) => {
+                const c = statusColors[o.status] || "#888";
+                const oSteps = o.deliveryType === "pickup" ? pickupSteps : deliverySteps;
+                const label = oSteps.find(s => s.key === o.status)?.label || "مرفوض";
+                return (
+                  <div key={o.id} onClick={() => navigate(`/track/${o.orderNumber}`)}
+                    className="card animate-slideUp btn-3d" style={{ animationDelay:`${i*0.04}s`, padding:"18px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", gap:"12px", flexWrap:"wrap" }}>
+                    <div>
+                      <p style={{ color:"var(--gold)", fontWeight:"800", fontSize:"16px", margin:0 }}>#{o.orderNumber}</p>
+                      <p style={{ color:"var(--text-muted)", fontSize:"12px", margin:"4px 0 0" }}>
+                        {o.createdAt?.toDate?.()?.toLocaleDateString("ar-BH") || "—"} · {(o.items||[]).length} منتج
+                      </p>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                      <span style={{ color:"var(--gold)", fontWeight:"800", fontSize:"15px" }}>{(o.total||0).toFixed(3)} BD</span>
+                      <span style={{ background:c+"22", color:c, padding:"5px 12px", borderRadius:"20px", fontSize:"12px", border:`1px solid ${c}44`, fontWeight:"700", whiteSpace:"nowrap" }}>
+                        {label}
+                      </span>
+                      <span style={{ color:"var(--text-muted)", fontSize:"18px" }}>‹</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!authLoading && !ordersLoading && (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:"18px", marginTop:"36px" }}>
               {trustFeatures.map(({ icon, title, desc }) => (
                 <div key={title} className="card" style={{ textAlign:"center" }}>
                   <div className="icon-badge-3d" style={{ width:"48px", height:"48px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px", margin:"0 auto 14px" }}>
@@ -187,12 +208,13 @@ function TrackOrder() {
                 </div>
               ))}
             </div>
-          </div>
-        </>
+          )}
+        </div>
       )}
 
       {/* Results */}
-      <div style={{ maxWidth:"520px", margin:"0 auto", padding: isIdle ? "0 16px" : "40px 16px" }}>
+      {!showList && (
+      <div style={{ maxWidth:"520px", margin:"0 auto", padding:"40px 16px" }}>
 
         {loading && (
           <div style={{ textAlign:"center", padding:"40px" }}>
@@ -449,6 +471,7 @@ function TrackOrder() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
