@@ -12,15 +12,16 @@ function Product() {
   const navigate = useNavigate();
   const { cart, addToCart } = useContext(CartContext);
   const { showToast } = useToast();
-  const [selectedSize, setSelectedSize] = useState("");
   const [activeImage, setActiveImage] = useState(0);
   const [customValues, setCustomValues] = useState<Record<number, string>>({});
   const [showConfirm, setShowConfirm] = useState(false);
+  const [ringSize, setRingSize] = useState("");
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setActiveImage(0);
+    setRingSize("");
     getDoc(doc(db, "products", id)).then(snap => {
       if (snap.exists()) setProduct({ id: snap.id, ...snap.data() });
     });
@@ -45,16 +46,15 @@ function Product() {
       ? `⚠️ باقي ${stockLevel} فقط!`
       : `✅ متوفر (${stockLevel} قطعة)`;
 
-  // ✅ Check how many already in cart for this product+size
-  const getCartQty = (size?: string) => {
+  // ✅ Check how many already in cart for this product
+  const getCartQty = () => {
     return cart
-      .filter((item: any) => item.id === product.id && item.selectedSize === (size || ""))
+      .filter((item: any) => item.id === product.id)
       .reduce((s: number, item: any) => s + (item.quantity || 0), 0);
   };
 
-  // ✅ Get available stock for selected size or product
-  const getAvailableStock = (size?: string): number => {
-    if (product.sizes && size) return Number(product.sizes[size] || 0);
+  // ✅ Get available stock — منتجات قديمة فيها مقاسات نجمعها لرقم واحد
+  const getAvailableStock = (): number => {
     if (product.sizes) return Object.values(product.sizes).reduce((s: number, q: any) => s + Number(q), 0);
     return Number(product.quantity ?? 0);
   };
@@ -89,6 +89,9 @@ function Product() {
 
   const customFields: { label: string; required: boolean }[] = product.customizable && Array.isArray(product.customFields) ? product.customFields : [];
 
+  // ✅ خواتم غير مخصصة — نطلب مقاس العميل كنص حر بدل نظام المقاسات القديم
+  const needsRingSize = product.category === "rings" && !product.customizable;
+
   const missingRequiredField = () => customFields.some((field, i) => field.required && !customValues[i]?.trim());
 
   const buildCustomizationPayload = () =>
@@ -98,7 +101,11 @@ function Product() {
 
   const proceedToAddToCart = () => {
     const customization = product.customizable ? buildCustomizationPayload() : undefined;
-    addToCart({ ...product, selectedSize, ...(customization && customization.length ? { customization } : {}) });
+    addToCart({
+      ...product,
+      ...(needsRingSize ? { selectedSize: ringSize.trim() } : {}),
+      ...(customization && customization.length ? { customization } : {}),
+    });
     showToast(`تمت إضافة "${product.name}" للسلة 🛒`, "success");
   };
 
@@ -167,31 +174,15 @@ function Product() {
             {stockLabel}
           </span>
 
-          {/* Sizes */}
-          {product.sizes && (
+          {/* Ring size — free text, only for non-customized rings */}
+          {needsRingSize && (
             <div style={{ marginBottom: "16px" }}>
-              <p style={{ color: "#888", fontSize: "13px", marginBottom: "8px" }}>اختر المقاس:</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {Object.entries(product.sizes).map(([size, qty]: any) => {
-                  const inCart = getCartQty(size);
-                  const remaining = Number(qty) - inCart;
-                  return (
-                    <button key={size} onClick={() => qty > 0 && remaining > 0 && setSelectedSize(size)} className="btn-3d"
-                      style={{
-                        padding: "8px 14px", borderRadius: "8px",
-                        border: selectedSize === size ? "2px solid #D4AF37" : "1px solid #444",
-                        background: selectedSize === size ? "#D4AF3722" : (qty === 0 || remaining <= 0) ? "#1a1a1a" : "transparent",
-                        color: (qty === 0 || remaining <= 0) ? "#444" : "white",
-                        cursor: (qty === 0 || remaining <= 0) ? "not-allowed" : "pointer", fontSize: "13px",
-                      }}>
-                      {size}
-                      {qty === 0 && <span style={{ fontSize: "10px" }}> (نفذ)</span>}
-                      {qty > 0 && remaining <= 0 && <span style={{ fontSize: "10px", color: "#f59e0b" }}> (في السلة)</span>}
-                      {qty > 0 && remaining > 0 && remaining <= 3 && <span style={{ color: "#f59e0b", fontSize: "10px", marginRight: "4px" }}>({remaining})</span>}
-                    </button>
-                  );
-                })}
-              </div>
+              <label style={{ display: "block", color: "#aaa", fontSize: "13px", marginBottom: "6px" }}>
+                مقاسك <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <input className="inp" value={ringSize}
+                onChange={e => setRingSize(e.target.value)}
+                placeholder="مثال: 17" />
             </div>
           )}
 
@@ -235,12 +226,11 @@ function Product() {
               </button>
             ) : (
               <button onClick={() => {
-                if (product.sizes && !selectedSize) { showToast("اختر المقاس أولاً ⚠️", "warning"); return; }
+                if (needsRingSize && !ringSize.trim()) { showToast("أدخل مقاسك أولاً ⚠️", "warning"); return; }
 
                 // ✅ Check stock vs cart quantity before adding
-                const size = product.sizes ? selectedSize : undefined;
-                const available = getAvailableStock(size);
-                const inCart = getCartQty(size);
+                const available = getAvailableStock();
+                const inCart = getCartQty();
 
                 if (inCart >= available) {
                   showToast(`لا يمكن إضافة أكثر من ${available} قطعة من هذا المنتج ❌`, "error");
@@ -265,17 +255,14 @@ function Product() {
 
           {/* ✅ Show cart qty warning */}
           {(() => {
-            const size = product.sizes ? selectedSize : undefined;
-            if (!product.sizes || selectedSize) {
-              const available = getAvailableStock(size);
-              const inCart = getCartQty(size);
-              if (inCart > 0 && available > 0) {
-                return (
-                  <p style={{ color: "#f59e0b", fontSize: "12px", marginTop: "10px" }}>
-                    🛒 لديك {inCart} في السلة — متبقي {available - inCart} قطعة
-                  </p>
-                );
-              }
+            const available = getAvailableStock();
+            const inCart = getCartQty();
+            if (inCart > 0 && available > 0) {
+              return (
+                <p style={{ color: "#f59e0b", fontSize: "12px", marginTop: "10px" }}>
+                  🛒 لديك {inCart} في السلة — متبقي {available - inCart} قطعة
+                </p>
+              );
             }
             return null;
           })()}

@@ -173,7 +173,7 @@ export default function CustomizationManager() {
                   🖼️ {p.images.length} صور
                 </div>
               )}
-              <div style={{ position:"absolute", top:"6px", right:"6px", background:"rgba(184,150,46,0.92)", color:"#000", padding:"3px 9px", borderRadius:"6px", fontSize:"10px", fontWeight:"800" }}>🎨 مخصص</div>
+              <div style={{ position:"absolute", top:"6px", right:"6px", background:"rgba(184,150,46,0.92)", color:"#000", padding:"3px 9px", borderRadius:"6px", fontSize:"10px", fontWeight:"800" }}>🎨 صياغة</div>
             </div>
             <div style={{ padding:"11px" }}>
               <h4 style={{ color:"var(--gold)", margin:"0 0 3px", fontSize:"13px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</h4>

@@ -325,7 +325,7 @@ function App() {
               <button onClick={() => setCategory("customized")} className="btn-3d"
                 style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category==="customized"?"var(--gold)":"var(--border)"}`, background:category==="customized"?"var(--gold)":"transparent", color:category==="customized"?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:"6px" }}>
                 <img src={customizationCatIcon} alt="" style={{ width:"15px", height:"15px", objectFit:"contain", filter:category==="customized"?"none":"invert(1)" }} />
-                منتجات مخصصة
+                صياغة
               </button>
             </div>
 
@@ -357,7 +357,7 @@ function App() {
                     {soldOut && <div className="badge-overlay badge-red">Sold Out</div>}
                     {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
                     {product.isNew && <div className="badge-overlay badge-green badge-right">جديد ✨</div>}
-                    {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 مخصص</div>}
+                    {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة</div>}
                     {product.video ? (
                       <video src={product.video} autoPlay loop muted playsInline style={{ width: "100%", height: "200px", objectFit: "cover" }} />
                     ) : (

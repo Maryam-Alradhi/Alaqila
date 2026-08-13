@@ -37,10 +37,11 @@ function buildMessage(orderNumber: string, order: any): string {
   const balanceDiscount = Number(order.balanceDiscount || 0);
   const balLine = balanceDiscount > 0 ? `\n💰 *خصم الرصيد:* -${balanceDiscount.toFixed(3)} BD` : "";
   const receiptLine = order.hasReceipt ? "\n🧾 *إيصال الدفع:* مُرفق ✅" : "";
-  const paymentLabel = order.paymentMethod === "cod" ? "كاش" : order.paymentMethod === "benefit" ? "Benefit" : "رصيد";
+  const codLine = order.paymentMethod === "cod" ? "\n⚠️ *لم يتم الدفع بعد — يُدفع كاش عند الاستلام*" : "";
+  const paymentLabel = order.paymentMethod === "cod" ? "كاش عند الاستلام" : order.paymentMethod === "benefit" ? "Benefit" : "رصيد";
   const total = Number(order.total || 0);
 
-  return `🛒 *طلب جديد — ${orderNumber}*\n\n👤 *الاسم:* ${order.customer?.name || ""}\n📞 *الهاتف:* ${order.customer?.phone || ""}\n${delivLine}\n💳 *الدفع:* ${paymentLabel}${balLine}${receiptLine}\n\n📦 *المنتجات:*\n${itemsList}\n\n💰 *الإجمالي: ${total.toFixed(3)} BD*`;
+  return `🛒 *طلب جديد — ${orderNumber}*\n\n👤 *الاسم:* ${order.customer?.name || ""}\n📞 *الهاتف:* ${order.customer?.phone || ""}\n${delivLine}\n💳 *الدفع:* ${paymentLabel}${balLine}${receiptLine}${codLine}\n\n📦 *المنتجات:*\n${itemsList}\n\n💰 *الإجمالي: ${total.toFixed(3)} BD*`;
 }
 
 // ── يشتغل تلقائياً كل ما ينضاف طلب جديد بفايرستور — التوكن يبقى بالسيرفر فقط، ما يوصل لجهاز العميل أبداً ──
