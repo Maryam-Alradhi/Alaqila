@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { collection, deleteDoc, doc, query, orderBy, onSnapshot, writeBatch, increment, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "./firebase";
@@ -67,6 +68,7 @@ const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
 ];
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [tab,         setTab]         = useState<Tab>("orders");
   const [orders,      setOrders]      = useState<any[]>([]);
   const [filter,      setFilter]      = useState("all");
@@ -245,7 +247,7 @@ export default function Admin() {
         </div>
 
         <div style={{ padding:"10px 8px", borderTop:"1px solid var(--border)" }}>
-          <button onClick={()=>signOut(auth)} title="تسجيل الخروج" className="btn-3d"
+          <button onClick={async ()=>{ await signOut(auth); navigate("/"); }} title="تسجيل الخروج" className="btn-3d"
             style={{ width:"100%", padding: sidebarOpen?"10px 12px":"10px", borderRadius:"10px", border:"none", background:"transparent", color:"#ef4444", cursor:"pointer", fontSize:"13px", display:"flex", alignItems:"center", gap:"10px", fontFamily:"inherit", transition:"var(--transition)" }}
             onMouseEnter={e => e.currentTarget.style.background="rgba(239,68,68,0.08)"}
             onMouseLeave={e => e.currentTarget.style.background="transparent"}>
