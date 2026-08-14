@@ -93,6 +93,16 @@ function App() {
     return () => document.removeEventListener("mousedown", fn);
   }, []);
 
+  // ✅ Fix: useMemo so filtering doesn't recompute on every render
+  // ⚠️ لازم يبقى قبل أي return مبكر — أي هوك بعد return شرطي يسبب "Rendered more/fewer hooks" ويكسر الصفحة كاملة
+  // بالضبط وقت التنقّل بين مسار الأدمن ومسار عادي (تسجيل الدخول/الخروج) بدون إعادة تحميل الصفحة
+  const filteredProducts = useMemo(() =>
+    products
+      .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()))
+      .filter(p => category === "all" ? true : category === "customized" ? !!p.customizable : p.category === category),
+    [products, search, category]
+  );
+
   const isAdminRoute = location.pathname.startsWith("/manage-store-aqeela");
   if (isAdminRoute) {
     // ✅ isAdmin يعتمد بس على user.email — ما نحتاج ننتظر البروفايل هنا (لو فشل جلبه لأي سبب، ما نبي الأدمن يعلق على شاشة تحميل للأبد)
@@ -110,14 +120,6 @@ function App() {
   const hideNavOn  = ["/", "/login"];
   const showNavbar = !hideNavOn.includes(location.pathname);
   const showFooter = !hideNavOn.includes(location.pathname);
-
-  // ✅ Fix: useMemo so filtering doesn't recompute on every render
-  const filteredProducts = useMemo(() =>
-    products
-      .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()))
-      .filter(p => category === "all" ? true : category === "customized" ? !!p.customizable : p.category === category),
-    [products, search, category]
-  );
 
   const initial = user ? (profile?.name || user.email || "؟")[0].toUpperCase() : null;
 
