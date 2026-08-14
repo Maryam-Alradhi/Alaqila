@@ -10,6 +10,7 @@ const CATEGORIES = [
   { value: "rings",    label: "💍 خاتم" },
   { value: "brooch",   label: "📌 بروش" },
   { value: "bracelet", label: "💫 أساور" },
+  { value: "necklace", label: "📿 سلسال" },
 ];
 
 // ✅ حقول جاهزة تلقائياً حسب النوع — الأدمن ما يحتاج يبنيها يدوياً
@@ -24,6 +25,10 @@ const PRESET_FIELDS: Record<string, CustomField[]> = {
   bracelet: [
     { label: "النقش المطلوب", required: true },
     { label: "مقاس السوار",   required: false },
+  ],
+  necklace: [
+    { label: "النقش المطلوب", required: true },
+    { label: "طول السلسال",   required: false },
   ],
 };
 

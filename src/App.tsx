@@ -95,8 +95,8 @@ function App() {
 
   const isAdminRoute = location.pathname.startsWith("/manage-store-aqeela");
   if (isAdminRoute) {
-    // انتظر حتى يكتمل تحميل الـ auth — يشمل جلب البروفايل من Firestore
-    if (authLoading || (user && !profile)) return (
+    // ✅ isAdmin يعتمد بس على user.email — ما نحتاج ننتظر البروفايل هنا (لو فشل جلبه لأي سبب، ما نبي الأدمن يعلق على شاشة تحميل للأبد)
+    if (authLoading) return (
       <div style={{ minHeight: "100vh", background: "#0B0F1A", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign:"center" }}>
           <div style={{ width:"40px", height:"40px", border:"3px solid #1a1a2e", borderTop:"3px solid #D4AF37", borderRadius:"50%", margin:"0 auto 14px", animation:"spin 0.8s linear infinite" }} />
@@ -359,10 +359,10 @@ function App() {
                     {product.isNew && <div className="badge-overlay badge-green badge-right">جديد ✨</div>}
                     {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة</div>}
                     {product.video ? (
-                      <video src={product.video} autoPlay loop muted playsInline style={{ width: "100%", height: "200px", objectFit: "cover" }} />
+                      <video src={product.video} autoPlay loop muted playsInline style={{ width: "100%", height: "200px", objectFit: "cover", opacity: soldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
                     ) : (
                       // ✅ Fix: lazy load images so only visible images load
-                      <img src={product.image} loading="lazy" decoding="async" style={{ width: "100%", height: "200px", objectFit: "cover", transition: "transform 0.4s ease" }} alt={product.name} />
+                      <img src={product.image} loading="lazy" decoding="async" style={{ width: "100%", height: "200px", objectFit: "cover", transition: "transform 0.4s ease, opacity 0.3s ease", opacity: soldOut ? 0.4 : 1 }} alt={product.name} />
                     )}
                     <div style={{ padding: "13px" }}>
                       <h3 style={{ color: "var(--gold)", margin: "0 0 4px", fontSize: "14px", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</h3>

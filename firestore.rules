@@ -11,7 +11,7 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn()
         && request.auth.token.email != null
-        && request.auth.token.email.lower() == "mariamalradhi1@gmail.com";
+        && request.auth.token.email.lower() == "halradhi97@gmail.com";
     }
 
     // ── المنتجات — أي زائر يقرأ، الأدمن فقط يضيف/يعدّل/يحذف ──
@@ -21,25 +21,42 @@ service cloud.firestore {
     }
 
     // ── الطلبات ──
-    // - إنشاء: مفتوح للجميع (ضيوف + مسجلين) لإتمام الشراء بدون حساب، وبحالة "pending" فقط
+    // - إنشاء: يتطلب تسجيل دخول الآن (إتمام الطلب صار يفرض ذلك بالواجهة أصلاً)، وبحالة "pending" فقط،
+    //   و userId بالمستند لازم يطابق هوية اللي يكتب — يمنع أي شخص يفبرك طلب باسم حساب غيره
     // - جلب طلب واحد بمعرفه (get): مفتوح — تتبع الطلب يعتمد على معرفة رقم الطلب نفسه (غير قابل للتخمين)
     // - سرد/استعلام الطلبات (list): الأدمن فقط، أو المستخدم المسجل لطلباته هو فقط
-    // - تعديل: الأدمن، أو صاحب/زائر الطلب يقدر بس يلغي طلبه وهو لسا "pending" (بدون تغيير أي حقل غيره)
+    // - تعديل: الأدمن، أو صاحب الطلب المسجل (أو طلب زائر قديم بلا userId) يقدر بس يلغي طلبه وهو لسا "pending"
     // - حذف: الأدمن فقط
     match /orders/{id} {
       allow get:    if true;
       allow list:   if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
-      allow create: if request.resource.data.status == "pending";
+      allow create: if isSignedIn()
+        && request.resource.data.status == "pending"
+        && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin() ||
         (resource.data.status == "pending" &&
          request.resource.data.status == "rejected" &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]));
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]) &&
+         (resource.data.userId == null || (isSignedIn() && request.auth.uid == resource.data.userId)));
       allow delete: if isAdmin();
     }
 
-    // ── المستخدمون — كل مستخدم يشوف/يعدّل ملفه الشخصي فقط، الأدمن يشوف/يعدّل الكل (لإدارة الرصيد) ──
+    // ── المستخدمون ──
+    // - قراءة: صاحب الحساب فقط، أو الأدمن
+    // - إنشاء أول مرة (تسجيل حساب جديد): صاحب الحساب فقط، وبس لنفس uid
+    // - تعديل: الأدمن يقدر يغيّر أي شي (لإدارة الرصيد يدوياً) — العميل نفسه يقدر يعدّل بياناته الشخصية بس
+    //   (الاسم/الهاتف/العنوان)، أو ينقص رصيده هو بس وقت ما يستخدمه بالدفع (ما يقدر يزوّد رصيده لنفسه أبداً)
     match /users/{uid} {
-      allow read, write: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow read:   if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow create: if isSignedIn() && request.auth.uid == uid;
+      allow update: if isAdmin()
+        || (isSignedIn() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name","phone","address"]))
+        || (isSignedIn() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["balance"])
+            && request.resource.data.balance < resource.data.balance
+            && request.resource.data.balance >= 0);
+      allow delete: if isAdmin();
     }
 
     // ── الإعدادات ──

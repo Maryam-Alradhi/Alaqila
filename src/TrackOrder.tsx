@@ -107,7 +107,8 @@ function TrackOrder() {
   const steps = order?.deliveryType === "pickup" ? pickupSteps : deliverySteps;
   const currentIdx = order ? steps.findIndex(s => s.key === order.status) : -1;
   const isDone = order?.status === "delivered" || order?.status === "collected";
-  const canCancel = order?.status === "pending";
+  // ✅ ما نبين زر الإلغاء إلا لصاحب الطلب الفعلي (أو طلب زائر قديم بلا حساب) — يطابق قاعدة الحماية بالسيرفر
+  const canCancel = order?.status === "pending" && (!order.userId || order.userId === user?.uid);
   const showList = !orderNumber;
 
   return (

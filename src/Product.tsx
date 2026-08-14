@@ -123,10 +123,10 @@ function Product() {
               <div style={{ position: "relative" }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
                 {activeMedia.type === "video" ? (
                   <video key={activeMedia.src} src={activeMedia.src} autoPlay loop muted playsInline
-                    style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "14px", boxShadow: "0 0 25px rgba(212,175,55,0.25)" }} />
+                    style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "14px", boxShadow: "0 0 25px rgba(212,175,55,0.25)", opacity: isSoldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
                 ) : (
                   <img src={activeMedia.src} alt={product.name}
-                    style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "14px", boxShadow: "0 0 25px rgba(212,175,55,0.25)" }} />
+                    style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "14px", boxShadow: "0 0 25px rgba(212,175,55,0.25)", opacity: isSoldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
                 )}
                 {mediaItems.length > 1 && (
                   <>

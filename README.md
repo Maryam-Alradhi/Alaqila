@@ -1,6 +1,6 @@
 # 🏪 متجر العقيلة
 
-متجر إلكتروني مبني على React + Firebase.
+متجر إلكتروني مبني على React + Firebase، مستضاف على Vercel.
 
 ---
 
@@ -22,16 +22,15 @@ cp .env.example .env
 | `VITE_FIREBASE_STORAGE_BUCKET` | نفس المكان |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | نفس المكان |
 | `VITE_FIREBASE_APP_ID` | نفس المكان |
-| `VITE_TELEGRAM_BOT_TOKEN` | أنشئ بوت عبر @BotFather في Telegram |
-| `VITE_TELEGRAM_CHAT_ID` | افتح: api.telegram.org/bot<TOKEN>/getUpdates بعد إرسال رسالة |
-| `VITE_BENEFIT_IBAN` | رقم الـ IBAN الحقيقي لحسابك البنكي |
-| `VITE_WHATSAPP_NUMBER` | رقم الواتساب بدون + (مثال: 97337573375) |
+| `VITE_BENEFIT_IBAN` | رقم الـ IBAN الحقيقي لحسابك البنكي (أو اضبطه من لوحة الأدمن) |
+| `VITE_WHATSAPP_NUMBER` | رقم الواتساب بدون + (مثال: 97337573375) (أو اضبطه من لوحة الأدمن) |
+| `VITE_ADMIN_EMAIL` | إيميل حساب الأدمن — لازم يطابق نفس القيمة بـ `firestore.rules` و`storage.rules` بالضبط |
 
-> ⚠️ لا ترفع ملف .env على GitHub أبداً — محمي في .gitignore
+> ⚠️ **لا تحطي قيم حقيقية بملف `.env.example`** — هذا الملف يرفع لـ GitHub والمستودع عام. القيم الحقيقية تنحط بـ `.env` بس (محمي بـ `.gitignore`، ما يرفع أبداً).
 
 ---
 
-### 2. تثبيت وتشغيل
+### 2. تثبيت وتشغيل محلي
 
 ```bash
 npm install
@@ -40,36 +39,50 @@ npm run dev
 
 ---
 
-### 3. ضبط Firestore Security Rules (مهم!)
+### 3. نشر الموقع (Hosting)
 
-1. افتح Firebase Console → Firestore → Rules
-2. انسخ محتوى ملف `firestore.rules` والصقه
-3. اضغط Publish
+الموقع يُستضاف على **Vercel**، مربوط بمستودع GitHub — أي `git push` لفرع `main` ينشر تلقائياً.
+
+> Vite build → `dist/` → Vercel. إعدادات التوجيه (SPA rewrite) والـ headers الأمنية موجودة بملف `vercel.json`.
+
+**لازم تضيفي كل متغيرات البيئة أعلاه بإعدادات Vercel** (Project Settings → Environment Variables) — الموقع ما يشتغل صح بدونها.
 
 ---
 
-### 4. نشر الموقع
+### 4. نشر قواعد الحماية (Firestore + Storage)
+
+هذي خطوة **منفصلة تماماً** عن نشر الموقع — لازم Firebase CLI:
 
 ```bash
-npm run build
-firebase deploy
+npm install -g firebase-tools
+firebase login
+firebase deploy --only firestore:rules,storage:rules
 ```
+
+⚠️ لازم تسوّيها في كل مرة تتغيّر فيها `firestore.rules` أو `storage.rules` — تعديل الملف محلياً ما يأثر على الموقع الحي إلا بعد هذا الأمر.
+
+---
+
+## 🔔 الإشعارات (ntfy)
+
+الموقع يرسل إشعار فوري (تفاصيل الطلب + صورة الإيصال) مباشرة من متصفح العميل لتطبيق **ntfy** على جوالك، بدون Cloud Function وبدون تكلفة. تضبطينه من لوحة الأدمن → "إشعارات الطلبات" (اسم القناة يتخزّن بـ Firestore، مو بـ `.env`).
 
 ---
 
 ## 🔐 ملاحظات أمنية
 
-- المفاتيح كلها في `.env` — لا تُكشَف في الكود
-- Security Rules مضبوطة: العملاء يكتبون، الإدمن يقرأ/يعدل
-- أرقام الطلبات تُولَّد بـ `crypto.getRandomValues` (لا يمكن تخمينها)
-- CSP Headers مضبوطة في `firebase.json`
+- المفاتيح الحساسة (Firebase config) بـ `.env` بس، ما تُكشف بالكود المرفوع
+- Firestore Security Rules مضبوطة بدقة لكل مجموعة بيانات (`firestore.rules`) — راجعيها قبل أي تعديل على صلاحيات الوصول
+- إيميل الأدمن `isAdmin()` بـ `firestore.rules` و`storage.rules` **لازم يطابق `VITE_ADMIN_EMAIL` بالضبط** — لو غيّرتي الإيميل يوماً، لازم تحدّثين الثلاثة مكان وتعيدين نشر القواعد
+- أرقام الطلبات تُولَّد بـ `crypto.getRandomValues` (غير قابلة للتخمين) — تتبع الطلب يعتمد عليها
+- CSP وHeaders أمنية ثانية مضبوطة بـ `vercel.json` (مو `firebase.json` — الموقع مستضاف على Vercel)
 
-## 🛠️ إعدادات Firebase Console
+## 🛠️ إعدادات Firebase Console المطلوبة
 
 ### Authentication
-- فعّل Email/Password
-- أنشئ حساب إدمن: Authentication → Add user
+- فعّل Email/Password (و Google لو تبين تسجيل دخول بجوجل)
+- أنشئ حساب الأدمن بنفس الإيميل الموجود بـ `VITE_ADMIN_EMAIL`
 
 ### Firestore
-- أنشئ قاعدة بيانات في Production mode
-- طبّق قواعد `firestore.rules`
+- أنشئ قاعدة بيانات (Production mode)
+- انشري `firestore.rules` (خطوة 4 أعلاه)
