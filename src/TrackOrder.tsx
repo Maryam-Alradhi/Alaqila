@@ -162,8 +162,8 @@ function TrackOrder() {
             <div className="card animate-slideUp" style={{ textAlign:"center", padding:"46px 20px" }}>
               <div style={{ fontSize:"48px", marginBottom:"12px" }}>📭</div>
               <p style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700" }}>ما عندك طلبات بعد</p>
-              <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"6px", marginBottom:"20px" }}>أول ما تسوّين طلب، بيبين هنا تلقائياً</p>
-              <button onClick={() => navigate("/shop")} className="btn-gold btn-3d">تصفحي المتجر ✨</button>
+              <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"6px", marginBottom:"20px" }}>أول ما تسوّين طلب، بيبين تلقائياً</p>
+              <button onClick={() => navigate("/shop")} className="btn-gold btn-3d">تصفح المتجر ✨</button>
             </div>
           )}
 

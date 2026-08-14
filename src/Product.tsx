@@ -200,7 +200,7 @@ function Product() {
           {/* Customization fields */}
           {customFields.length > 0 && (
             <div style={{ marginBottom: "20px", background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "12px", padding: "14px" }}>
-              <p style={{ color: "#D4AF37", fontSize: "13px", fontWeight: "bold", marginBottom: "10px" }}>🎨 خيارات التخصيص</p>
+              <p style={{ color: "#D4AF37", fontSize: "13px", fontWeight: "bold", marginBottom: "10px" }}>🎨 خيارات الصياغة حسب الطلب</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {customFields.map((field, i) => (
                   <div key={i}>
@@ -214,7 +214,7 @@ function Product() {
                 ))}
               </div>
               <p style={{ color: "#f59e0b", fontSize: "11px", marginTop: "10px", lineHeight: "1.6" }}>
-                ⏱️ يستغرق تنفيذ التخصيص من أسبوع إلى أسبوعين، وسنتواصل معك لتأكيد التفاصيل قبل التنفيذ.
+                ⏱️ يستغرق تنفيذ الصياغة حسب الطلب من أسبوع إلى أسبوعين، وسنتواصل معك لتأكيد التفاصيل قبل التنفيذ.
               </p>
             </div>
           )}
@@ -245,7 +245,7 @@ function Product() {
 
                 proceedToAddToCart();
               }} className="btn-3d" style={{ padding: "12px 28px", borderRadius: "12px", border: "none", background: "#D4AF37", color: "#000", fontWeight: "bold", cursor: "pointer", fontSize: "15px" }}>
-                {product.customizable ? "اطلب التخصيص 🎨" : "أضف للسلة 🛒"}
+                {product.customizable ? "اطلب الصياغة حسب الطلب 🎨" : "أضف للسلة 🛒"}
               </button>
             )}
             <button onClick={() => navigate("/shop")} className="btn-3d" style={{ padding: "12px 20px", borderRadius: "12px", border: "1px solid #333", background: "transparent", color: "#aaa", cursor: "pointer" }}>

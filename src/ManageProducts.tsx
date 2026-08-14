@@ -377,7 +377,7 @@ export default function ManageProducts() {
                 </div>
 
                 <p style={{ color:"var(--text-muted)", fontSize:"11px", background:"rgba(184,150,46,0.04)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius-sm)", padding:"10px 12px" }}>
-                  💡 خدمة التخصيص (النقش والصور المخصصة) تُدار الآن من قسم <strong style={{ color:"var(--gold)" }}>🎨 التخصيص</strong> في القائمة الجانبية.
+                  💡 خدمة صياغة حسب الطلب (النقش والصور المخصصة) تُدار الآن من قسم <strong style={{ color:"var(--gold)" }}>🎨 الصياغة حسب الطلب</strong> في القائمة الجانبية.
                 </p>
               </div>
 

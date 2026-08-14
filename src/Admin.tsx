@@ -59,7 +59,7 @@ const statusColors: Record<string,string> = {
 const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
   { key:"orders",        icon:ordersIcon,          label:"الطلبات",         group:"main" },
   { key:"products",      icon:productsIcon,        label:"المنتجات",        group:"main" },
-  { key:"customization", icon:customizationIcon,   label:"التخصيص",         group:"main" },
+  { key:"customization", icon:customizationIcon,   label:"صياغة حسب الطلب",         group:"main" },
   { key:"customers",     icon:customersIcon,       label:"العملاء",         group:"main" },
   { key:"notifications", icon:notificationsIcon,   label:"الإشعارات",       group:"main" },
   { key:"stats",         icon:statisticsIcon,      label:"الإحصائيات",      group:"main" },
