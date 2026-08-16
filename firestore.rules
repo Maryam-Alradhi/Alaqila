@@ -14,10 +14,17 @@ service cloud.firestore {
         && request.auth.token.email.lower() == "halradhi97@gmail.com";
     }
 
-    // ── المنتجات — أي زائر يقرأ، الأدمن فقط يضيف/يعدّل/يحذف ──
+    // ── المنتجات ──
+    // - قراءة: مفتوحة للجميع
+    // - إضافة/حذف/تعديل أي حقل: الأدمن فقط
+    // - استثناء ضيّق: أي مستخدم مسجّل دخول يقدر يعدّل حقل الكمية (quantity) بس — يسمح بخصم الكمية
+    //   فوراً وقت تأكيد الطلب (يمنع بيع نفس القطعة لأكثر من شخص)، واسترجاعها لو ألغى طلبه بنفسه
     match /products/{id} {
       allow read:  if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+        || (isSignedIn()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["quantity"])
+            && request.resource.data.quantity >= 0);
     }
 
     // ── الطلبات ──

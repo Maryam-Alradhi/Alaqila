@@ -360,6 +360,11 @@ function App() {
                     {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
                     {product.isNew && <div className="badge-overlay badge-green badge-right">جديد ✨</div>}
                     {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة حسب الطلب</div>}
+                    {(product.gender === "female" || product.gender === "male") && (
+                      <div className="badge-overlay" style={{ top: "auto", bottom: "8px", left: "8px", right: "auto", background: "rgba(0,0,0,0.7)", color: "white" }}>
+                        {product.gender === "female" ? " نسائي" : " رجالي"}
+                      </div>
+                    )}
                     {product.video ? (
                       <video src={product.video} autoPlay loop muted playsInline style={{ width: "100%", height: "200px", objectFit: "cover", opacity: soldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
                     ) : (

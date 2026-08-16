@@ -198,9 +198,18 @@ export default function Checkout() {
         deliveryType:  delivery   ?? "delivery",
         hasReceipt,
         status:        "pending",
+        stockDeducted: true, // ✅ الكمية تُخصم فوراً وقت الطلب — تمنع بيع نفس القطعة لأكثر من زبون بنفس الوقت
         createdAt:     serverTimestamp(),
       };
       await setDoc(doc(db,"orders",orderNumber), orderData);
+
+      // ✅ خصم الكمية فوراً من كل منتج بالسلة — best-effort، ما يوقف الطلب لو فشل بند وحد
+      for (const item of cart) {
+        if (!item?.id) continue;
+        try {
+          await updateDoc(doc(db,"products",item.id), { quantity: increment(-(item.quantity||0)) });
+        } catch { /* نكمل حتى لو فشل خصم منتج معيّن */ }
+      }
 
       // ✅ إشعار فوري مباشرة من المتصفح — نص الطلب + صورة الإيصال (إن وجدت)
       sendNtfyNotification(ntfyTopic, orderNumber, orderData, hasReceipt ? receiptFile : null);

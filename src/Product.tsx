@@ -169,10 +169,22 @@ function Product() {
             display: "inline-block", padding: "4px 12px", borderRadius: "20px",
             background: stockColor + "22", color: stockColor,
             border: `1px solid ${stockColor}44`, fontSize: "13px",
-            fontWeight: "bold", marginBottom: "16px",
+            fontWeight: "bold", marginBottom: "16px", marginLeft: "8px",
           }}>
             {stockLabel}
           </span>
+
+          {/* Gender badge — اختياري */}
+          {(product.gender === "female" || product.gender === "male") && (
+            <span style={{
+              display: "inline-block", padding: "4px 12px", borderRadius: "20px",
+              background: "rgba(255,255,255,0.06)", color: "#ccc",
+              border: "1px solid #333", fontSize: "13px",
+              fontWeight: "bold", marginBottom: "16px",
+            }}>
+              {product.gender === "female" ? " نسائي" : " رجالي"}
+            </span>
+          )}
 
           {/* Ring size — free text, only for non-customized rings */}
           {needsRingSize && (

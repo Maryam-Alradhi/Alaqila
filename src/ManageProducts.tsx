@@ -23,6 +23,7 @@ const emptyForm = {
   isNew: false,
   isFeatured: false,
   discount: "",
+  gender: "" as "" | "female" | "male", // ✅ اختياري — فاضي معناه للجنسين
 };
 
 // ✅ يكشف روابط صفحات العرض الشائعة (مو رابط الصورة نفسها) ويرجّع نصيحة توضح الفرق
@@ -84,6 +85,7 @@ export default function ManageProducts() {
       isNew: !!p.isNew,
       isFeatured: !!p.isFeatured,
       discount: String(p.discount || ""),
+      gender: p.gender === "female" || p.gender === "male" ? p.gender : "",
     });
     setEditId(p.id);
     setShowForm(true);
@@ -109,7 +111,9 @@ export default function ManageProducts() {
       video: form.video.trim(),
       isNew: form.isNew,
       isFeatured: form.isFeatured,
-      discount: form.discount ? Number(form.discount) : 0,
+      // ✅ نحصر الخصم بين 0 و99% دايماً — خصم 100% أو أكثر يخلي السعر صفر أو بالسالب
+      discount: Math.min(99, Math.max(0, Number(form.discount) || 0)),
+      gender: form.gender || null, // ✅ اختياري — null معناه للجنسين
     };
 
     data.quantity = Number(form.quantity) || 0;
@@ -237,7 +241,7 @@ export default function ManageProducts() {
                     {p.discount > 0 ? (
                       <>
                         <span style={{ color:"#ef4444", textDecoration:"line-through", fontSize:"10px", marginLeft:"4px" }}>{p.price} BD</span>
-                        <span>{(p.price * (1 - p.discount/100)).toFixed(3)} BD</span>
+                        <span>{Math.max(0, p.price * (1 - p.discount/100)).toFixed(3)} BD</span>
                       </>
                     ) : `${p.price} BD`}
                   </p>
@@ -366,6 +370,23 @@ export default function ManageProducts() {
                         onClick={() => setForm(f => ({ ...f, [badge.key]: !(f as any)[badge.key] }))}
                         style={{ padding:"8px 16px", borderRadius:"99px", border:`1.5px solid ${(form as any)[badge.key]?"var(--gold)":"var(--border)"}`, background:(form as any)[badge.key]?"var(--gold)":"transparent", color:(form as any)[badge.key]?"#000":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
                         {badge.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* الجنس — اختياري، لو ما اخترتِ شي يعتبر للجنسين */}
+                <div>
+                  <label style={lbl}>الفئة (اختياري — اتركيه فاضي لو للجنسين)</label>
+                  <div style={{ display:"flex", gap:"8px", marginTop:"6px" }}>
+                    {[
+                      { value:"", label:"للجنسين" },
+                      { value:"female", label:" نسائي" },
+                      { value:"male", label:" رجالي" },
+                    ].map(g => (
+                      <button key={g.value} onClick={() => setForm(f => ({ ...f, gender: g.value as any }))} className="btn-3d"
+                        style={{ flex:1, padding:"9px 8px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.gender===g.value?"var(--gold)":"var(--border)"}`, background:form.gender===g.value?"var(--gold-dim)":"transparent", color:form.gender===g.value?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
+                        {g.label}
                       </button>
                     ))}
                   </div>

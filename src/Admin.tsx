@@ -138,6 +138,10 @@ export default function Admin() {
       await batch.commit();
 
       showToast(`${statusEmojis[status]} ${statusLabels[status]}`, "success");
+      // ✅ تنبيه واضح إن الكمية رجعت تلقائياً للمخزون — ما يحتاج الأدمن يعدّلها يدوياً
+      if (status === "rejected" && order?.stockDeducted) {
+        showToast("📦 تم إرجاع كمية المنتجات للمخزون تلقائياً", "info");
+      }
 
       // Award loyalty balance when order is completed
       if (status === "delivered" || status === "collected") {

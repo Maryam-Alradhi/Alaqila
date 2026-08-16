@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, updateDoc, getDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { doc, updateDoc, getDoc, collection, query, where, orderBy, getDocs, increment } from "firebase/firestore";
 import { db } from "./firebase";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
@@ -93,10 +93,18 @@ function TrackOrder() {
     if (!window.confirm("هل أنت متأكد من إلغاء الطلب؟")) return;
     setCancelling(true);
     try {
-      // ✅ الكمية ما تُخصم من المخزون إلا وقت ما الأدمن يؤكد الطلب، فطلب لسا "قيد المراجعة" ما يحتاج إرجاع كمية
+      // ✅ الكمية تُخصم فوراً وقت الطلب الآن — لو الطلب لسا اتخصمت كميته، نرجعها للمخزون وقت الإلغاء
+      if (order.stockDeducted) {
+        for (const item of (order.items || [])) {
+          if (!item?.id) continue;
+          try {
+            await updateDoc(doc(db,"products",item.id), { quantity: increment(item.quantity||0) });
+          } catch { /* نكمل حتى لو فشل إرجاع منتج معيّن */ }
+        }
+      }
       await updateDoc(doc(db,"orders",order.id), { status: "rejected" });
       setOrder({ ...order, status: "rejected" });
-      showToast("تم إلغاء الطلب ✅", "info");
+      showToast("تم إلغاء الطلب وإرجاع الكمية للمخزون ✅", "info");
     } catch {
       showToast("فشل الإلغاء، حاول مجدداً ❌", "error");
     } finally {

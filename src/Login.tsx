@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 import { auth } from "./firebase";
 import { useAuth } from "./AuthContext";
@@ -18,7 +18,10 @@ import keyIcon from "./assets/icons/key.png";
 type Mode = "landing" | "login" | "register";
 
 export default function Login() {
-  const [mode, setMode] = useState<Mode>("landing");
+  const location = useLocation();
+  // ✅ الصفحة الرئيسية "/" تفتح على المقدمة (landing)، بينما "/login" تفتح مباشرة على نموذج
+  // تسجيل الدخول — قبل هالتعديل كانت كل الروابط اللي تودّي لـ "/login" ترجع تعرض المقدمة بالغلط
+  const [mode, setMode] = useState<Mode>(location.pathname === "/login" ? "login" : "landing");
   const [name, setName]         = useState("");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +31,10 @@ export default function Login() {
   const { user, login, loginWithGoogle, register } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setMode(location.pathname === "/login" ? "login" : "landing");
+  }, [location.pathname]);
 
   const goAfterLogin = (loggedInEmail: string) => {
     const adminEmail = import.meta.env.VITE_ADMIN_EMAIL as string;
