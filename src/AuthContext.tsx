@@ -17,6 +17,7 @@ interface UserProfile {
   phone?: string;
   address?: string;
   balance: number;
+  usedCoupons?: string[];
   createdAt?: any;
 }
 

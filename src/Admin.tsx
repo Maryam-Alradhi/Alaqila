@@ -148,7 +148,7 @@ export default function Admin() {
       // عند التأكيد: قلّل الكمية (الأدمن عنده صلاحية)
       if (status === "confirmed" && order && !order.stockDeducted) {
         for (const item of (order.items || [])) {
-          if (!item?.id) continue;
+          if (!item?.id || item.customizable) continue;
           const snap = await getDoc(doc(db,"products",item.id));
           if (!snap.exists()) continue;
           const data: any = snap.data() || {};
@@ -166,7 +166,7 @@ export default function Admin() {
       // عند الرفض: استرجع الكمية (فقط لو اتخصمت)
       if (status === "rejected" && order && order.stockDeducted) {
         for (const item of (order.items || [])) {
-          if (!item?.id) continue;
+          if (!item?.id || item.customizable) continue;
           const snap = await getDoc(doc(db,"products",item.id));
           if (!snap.exists()) continue;
           const data: any = snap.data() || {};

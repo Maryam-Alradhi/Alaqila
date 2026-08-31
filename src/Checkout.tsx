@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { CartContext } from "./CartContext";
-import { setDoc, updateDoc, serverTimestamp, doc, getDoc, increment } from "firebase/firestore";
+import { setDoc, updateDoc, serverTimestamp, doc, getDoc, increment, arrayUnion } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
 import { useNavigate } from "react-router-dom";
@@ -147,10 +147,10 @@ export default function Checkout() {
     try {
       setLoading(true);
 
-      // فحص الكمية — بشكل آمن
+      // فحص الكمية — بشكل آمن (المنتجات المصنوعة حسب الطلب ما تخضع لمخزون، نتجاوزها)
       try {
         for (const item of cart) {
-          if (!item?.id) continue;
+          if (!item?.id || item.customizable) continue;
           const snap = await getDoc(doc(db,"products",item.id));
           if (!snap.exists()) continue;
           const data:any = snap.data()||{};
@@ -175,6 +175,7 @@ export default function Checkout() {
         image:        item.image        ?? "",
         selectedSize: item.selectedSize ?? null,
         selectedNecklaceType: item.selectedNecklaceType ?? null,
+        customizable: !!item.customizable, // ✅ يحدد إذا المنتج مصنوع حسب الطلب — يعفيه من كل منطق المخزون
         customization: Array.isArray(item.customization)
           ? item.customization.map((c: any) => ({ label: String(c.label ?? ""), value: String(c.value ?? "") }))
           : null,
@@ -210,8 +211,9 @@ export default function Checkout() {
 
       // ✅ خصم الكمية فوراً من كل منتج بالسلة — best-effort، ما يوقف الطلب لو فشل بند وحد
       // وبعد الخصم، لو الكمية المتبقية وصلت 3 أو أقل، نرسل تنبيه ntfy للأدمن (نفس قناة إشعار الطلبات)
+      // (المنتجات المصنوعة حسب الطلب ما تخضع لمخزون، نتجاوزها هنا)
       for (const item of cart) {
-        if (!item?.id) continue;
+        if (!item?.id || item.customizable) continue;
         try {
           const ref = doc(db,"products",item.id);
           await updateDoc(ref, { quantity: increment(-(item.quantity||0)) });
@@ -240,6 +242,12 @@ export default function Checkout() {
           await updateDoc(doc(db,"users",user.uid),{balance:increment(-balanceDiscount)});
           refreshProfile();
         } catch { /* ما نوقف الطلب لو فشل خصم الرصيد */ }
+      }
+
+      // ✅ نسجّل كود الخصم كمستخدم — يمنع نفس العميل يستخدمه مرة ثانية
+      if (coupon && user) {
+        try { await updateDoc(doc(db,"users",user.uid), { usedCoupons: arrayUnion(coupon.code) }); }
+        catch { /* ما نوقف الطلب لو فشل التسجيل */ }
       }
 
       clearCart();

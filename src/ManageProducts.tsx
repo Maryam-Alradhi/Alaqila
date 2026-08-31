@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
+import { getActiveDiscount, getDiscountedPrice } from "./pricing";
 
 const CATEGORIES = [
   { value: "rings",    label: "💍 خواتم" },
@@ -25,6 +26,7 @@ const emptyForm = {
   isNew: false,
   isFeatured: false,
   discount: "",
+  discountEndsAt: "", // ✅ اختياري — لو فاضي، الخصم يضل شغال لين تلغينه يدوياً
   gender: "" as "" | "female" | "male" | "kids", // ✅ اختياري — فاضي معناه للجميع
   // ✅ أنواع السلسلة — تظهر بس لقسم "سلاسل"، كل نوع له سعره الخاص، والعميل يختار وقت الطلب
   necklaceTypes: [] as NecklaceType[],
@@ -50,6 +52,7 @@ export default function ManageProducts() {
   const [saving, setSaving]     = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId]     = useState<string | null>(null);
+  const [editWasSoldOut, setEditWasSoldOut] = useState(false);
   const [form, setForm]         = useState({ ...emptyForm });
   const [search, setSearch]     = useState("");
   const [catFilter, setCatFilter] = useState("all");
@@ -60,7 +63,9 @@ export default function ManageProducts() {
     try {
       setLoading(true);
       const snap = await getDocs(collection(db, "products"));
-      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // ✅ المنتجات المصنوعة حسب الطلب (customizable) تُدار حصرياً من تبويب "الصياغة حسب الطلب" —
+      // نستبعدها هنا عشان محد يعدّلها من هذا النموذج (اللي يعيد يخترع رقم كمية وهمي لها بالخطأ)
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((p: any) => !p.customizable));
     } catch { showToast("خطأ في التحميل", "error"); }
     finally { setLoading(false); }
   };
@@ -89,13 +94,43 @@ export default function ManageProducts() {
       isNew: !!p.isNew,
       isFeatured: !!p.isFeatured,
       discount: String(p.discount || ""),
+      discountEndsAt: p.discountEndsAt || "",
       gender: ["female","male","kids"].includes(p.gender) ? p.gender : "",
       necklaceTypes: Array.isArray(p.necklaceTypes)
         ? p.necklaceTypes.map((t: any) => ({ name: String(t.name || ""), price: String(t.price ?? "") }))
         : [],
     });
     setEditId(p.id);
+    setEditWasSoldOut(Number(p.quantity ?? 0) === 0);
     setShowForm(true);
+  };
+
+  // ✅ يبلّغ كل العملاء المسجّلين "نبهيني لما يتوفر" لهذا المنتج، ثم يصفّي تسجيلاتهم (إشعار لمرة وحدة)
+  const notifyBackInStock = async (productId: string, productName: string) => {
+    const serviceId  = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
+    const templateId = import.meta.env.VITE_EMAILJS_RESTOCK_TEMPLATE_ID as string | undefined;
+    const publicKey  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
+    try {
+      const snap = await getDocs(collection(db, "stockAlerts"));
+      const alerts = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as any))
+        .filter(a => a.productId === productId);
+      if (alerts.length === 0) return;
+      if (serviceId && templateId && publicKey) {
+        const emailjs = await import("@emailjs/browser");
+        for (const alert of alerts) {
+          try {
+            await emailjs.default.send(serviceId, templateId, {
+              to_email: alert.email,
+              product_name: productName,
+              product_url: `https://alaqila-store.vercel.app/product/${productId}`,
+            }, { publicKey });
+          } catch { /* نكمل حتى لو فشل إيميل عميل معيّن */ }
+        }
+      }
+      await Promise.all(alerts.map(a => deleteDoc(doc(db, "stockAlerts", a.id))));
+      showToast(`🔔 تم تنبيه ${alerts.length} عميل إن "${productName}" رجع متوفر`, "info");
+    } catch { /* تنبيه اختياري، ما يوقف حفظ المنتج */ }
   };
 
   const handleSave = async () => {
@@ -130,6 +165,7 @@ export default function ManageProducts() {
       isFeatured: form.isFeatured,
       // ✅ نحصر الخصم بين 0 و99% دايماً — خصم 100% أو أكثر يخلي السعر صفر أو بالسالب
       discount: Math.min(99, Math.max(0, Number(form.discount) || 0)),
+      discountEndsAt: form.discountEndsAt || null, // ✅ اختياري — بعد هذا التاريخ الخصم يوقف تلقائياً
       gender: form.gender || null, // ✅ اختياري — null معناه للجنسين
     };
 
@@ -145,6 +181,8 @@ export default function ManageProducts() {
           necklaceTypes: necklaceTypes.length ? necklaceTypes : deleteField(),
         });
         showToast("تم التحديث ✅", "success");
+        // ✅ رجعت الكمية من صفر لموجب — نبلّغ اللي مسجّلين "نبهيني لما يتوفر"
+        if (editWasSoldOut && data.quantity > 0) notifyBackInStock(editId, data.name);
       } else {
         await addDoc(collection(db, "products"), {
           ...data,
@@ -168,7 +206,8 @@ export default function ManageProducts() {
     } catch { showToast("فشل الحذف", "error"); }
   };
 
-  const totalStock = (p: any) => p.sizes
+  // ✅ منتج مصنوع حسب الطلب (customizable) بلا مخزون إطلاقاً — نعتبره "بلا حد" بدل ما نعرض رقم وهمي
+  const totalStock = (p: any) => p.customizable ? Infinity : p.sizes
     ? Object.values(p.sizes).reduce((s: number, v: any) => s + Number(v), 0)
     : Number(p.quantity || 0);
 
@@ -253,9 +292,9 @@ export default function ManageProducts() {
                   {p.isNew  && <span style={{ background:"rgba(34,197,94,0.9)",  color:"white",  padding:"2px 7px", borderRadius:"5px", fontSize:"9px", fontWeight:"800" }}>جديد</span>}
                   {p.isFeatured && <span style={{ background:"rgba(212,175,55,0.9)", color:"#000", padding:"2px 7px", borderRadius:"5px", fontSize:"9px", fontWeight:"800" }}>⭐</span>}
                 </div>
-                {p.discount > 0 && (
+                {getActiveDiscount(p) > 0 && (
                   <div style={{ position:"absolute", top:"6px", right:"6px", background:"rgba(239,68,68,0.9)", color:"white", padding:"2px 8px", borderRadius:"5px", fontSize:"9px", fontWeight:"800" }}>
-                    -{p.discount}%
+                    -{getActiveDiscount(p)}%
                   </div>
                 )}
               </div>
@@ -263,15 +302,15 @@ export default function ManageProducts() {
                 <h4 style={{ color:"var(--gold)", margin:"0 0 3px", fontSize:"13px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</h4>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"6px" }}>
                   <p style={{ color:"var(--text-dim)", margin:0, fontSize:"12px", fontWeight:"700" }}>
-                    {p.discount > 0 ? (
+                    {getActiveDiscount(p) > 0 ? (
                       <>
                         <span style={{ color:"#ef4444", textDecoration:"line-through", fontSize:"10px", marginLeft:"4px" }}>{p.price} BD</span>
-                        <span>{Math.max(0, p.price * (1 - p.discount/100)).toFixed(3)} BD</span>
+                        <span>{getDiscountedPrice(p).toFixed(3)} BD</span>
                       </>
                     ) : `${p.price} BD`}
                   </p>
-                  <span style={{ color: soldOut?"#ef4444":lowStock?"#f59e0b":"#22c55e", fontSize:"10px", fontWeight:"700" }}>
-                    {soldOut?"نفذ":lowStock?`⚠️ ${stock}`:`✅ ${stock}`}
+                  <span style={{ color: p.customizable?"#D4AF37":soldOut?"#ef4444":lowStock?"#f59e0b":"#22c55e", fontSize:"10px", fontWeight:"700" }}>
+                    {p.customizable?"🎨 حسب الطلب":soldOut?"نفذ":lowStock?`⚠️ ${stock}`:`✅ ${stock}`}
                   </span>
                 </div>
                 <div style={{ display:"flex", gap:"5px" }}>
@@ -327,6 +366,14 @@ export default function ManageProducts() {
                   </div>
                 </div>
 
+                {/* ✅ تاريخ انتهاء الخصم — اختياري، يظهر بس لو فيه خصم مضبوط */}
+                {Number(form.discount) > 0 && (
+                  <div>
+                    <label style={lbl}>ينتهي الخصم بتاريخ (اختياري — اتركيه فاضي لو بلا نهاية)</label>
+                    <input type="date" value={form.discountEndsAt} onChange={e => setForm(f => ({ ...f, discountEndsAt: e.target.value }))} className="inp" dir="ltr" />
+                  </div>
+                )}
+
                 <div>
                   <label style={lbl}>الفئة / القسم</label>
                   <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="inp" style={{ background:"#0B0F1A" }}>
@@ -371,7 +418,7 @@ export default function ManageProducts() {
                 {/* Image Upload */}
                 {/* Multi-image gallery — one link per image, "+" adds another row */}
                 <div>
-                  <label style={lbl}>صور المنتج * (رابط لكل صورة — زوايا مختلفة، اضغط + لإضافة رابط ثاني)</label>
+                  <label style={lbl}>صور المنتج (اختياري لو مضبوط رابط فيديو تحت — رابط لكل صورة، اضغط + لإضافة رابط ثاني)</label>
                   <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginTop:"6px" }}>
                     {form.images.map((url, i) => {
                       const pageLinkWarning = isPageLinkNotDirect(url);

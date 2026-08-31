@@ -6,6 +6,8 @@ import { db } from "./firebase";
 import { CartContext } from "./CartContext";
 import { WishlistContext } from "./WishlistContext";
 import ProductReviews from "./ProductReviews";
+import StockAlertButton from "./StockAlertButton";
+import { getActiveDiscount, getDiscountedPrice } from "./pricing";
 import { useToast } from "./Toast";
 
 function Product() {
@@ -35,7 +37,8 @@ function Product() {
   if (!product)
     return <h2 style={{ color: "#D4AF37", textAlign: "center", marginTop: "80px" }}>جاري التحميل...</h2>;
 
-  const isSoldOut = product.sizes
+  // ✅ منتج مصنوع حسب الطلب (customizable) ما يخضع لمخزون إطلاقاً — دايماً متاح للطلب
+  const isSoldOut = product.customizable ? false : product.sizes
     ? Object.values(product.sizes).every((q: any) => Number(q) === 0)
     : Number(product.quantity ?? 0) === 0;
 
@@ -59,7 +62,9 @@ function Product() {
   };
 
   // ✅ Get available stock — منتجات قديمة فيها مقاسات نجمعها لرقم واحد
+  // ✅ مصنوع حسب الطلب = بلا حد أقصى (رقم كبير جداً بدل ما نربط الحد بمخزون وهمي)
   const getAvailableStock = (): number => {
+    if (product.customizable) return Infinity;
     if (product.sizes) return Object.values(product.sizes).reduce((s: number, q: any) => s + Number(q), 0);
     return Number(product.quantity ?? 0);
   };
@@ -101,7 +106,10 @@ function Product() {
   const necklaceTypes: { name: string; price: number }[] = Array.isArray(product.necklaceTypes) ? product.necklaceTypes : [];
   const needsNecklaceType = product.category === "necklace" && necklaceTypes.length > 0;
   const minTypePrice = needsNecklaceType ? Math.min(...necklaceTypes.map(t => Number(t.price) || 0)) : null;
-  const displayPrice = needsNecklaceType ? (selectedType ? selectedType.price : minTypePrice) : product.price;
+  // ✅ الخصم ما يطبّق على منتجات أنواع السلسلة (سعرها يتحدد بالنوع المختار نفسه)
+  const activeDiscount = needsNecklaceType ? 0 : getActiveDiscount(product);
+  const finalPrice = needsNecklaceType ? null : getDiscountedPrice(product);
+  const displayPrice = needsNecklaceType ? (selectedType ? selectedType.price : minTypePrice) : finalPrice;
 
   const missingRequiredField = () => customFields.some((field, i) => field.required && !customValues[i]?.trim());
 
@@ -116,6 +124,7 @@ function Product() {
       ...product,
       ...(needsRingSize ? { selectedSize: ringSize.trim() } : {}),
       ...(needsNecklaceType && selectedType ? { selectedNecklaceType: selectedType.name, price: selectedType.price } : {}),
+      ...(!needsNecklaceType && activeDiscount > 0 ? { price: finalPrice } : {}),
       ...(customization && customization.length ? { customization } : {}),
     });
     showToast(`تمت إضافة "${product.name}" للسلة 🛒`, "success");
@@ -180,19 +189,29 @@ function Product() {
               {isWishlisted(product.id) ? "♥" : "♡"}
             </button>
           </div>
-          <h2 style={{ color: "#ccc", marginBottom: "12px", fontSize: "clamp(16px,3vw,22px)" }}>
-            {needsNecklaceType && !selectedType ? `يبدأ من ${displayPrice} BD` : `${displayPrice} BD`}
+          <h2 style={{ color: "#ccc", marginBottom: "12px", fontSize: "clamp(16px,3vw,22px)", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            {needsNecklaceType ? (
+              !selectedType ? `يبدأ من ${displayPrice} BD` : `${displayPrice} BD`
+            ) : activeDiscount > 0 ? (
+              <>
+                <span style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: "12px", fontWeight: "800", padding: "2px 8px", borderRadius: "6px" }}>-{activeDiscount}%</span>
+                <span style={{ color: "#888", textDecoration: "line-through", fontSize: "15px" }}>{product.price} BD</span>
+                <span>{finalPrice!.toFixed(3)} BD</span>
+              </>
+            ) : `${product.price} BD`}
           </h2>
 
-          {/* Stock badge */}
-          <span style={{
-            display: "inline-block", padding: "4px 12px", borderRadius: "20px",
-            background: stockColor + "22", color: stockColor,
-            border: `1px solid ${stockColor}44`, fontSize: "13px",
-            fontWeight: "bold", marginBottom: "16px", marginLeft: "8px",
-          }}>
-            {stockLabel}
-          </span>
+          {/* Stock badge — ما يظهر للمنتجات المصنوعة حسب الطلب (بلا مخزون أصلاً) */}
+          {!product.customizable && (
+            <span style={{
+              display: "inline-block", padding: "4px 12px", borderRadius: "20px",
+              background: stockColor + "22", color: stockColor,
+              border: `1px solid ${stockColor}44`, fontSize: "13px",
+              fontWeight: "bold", marginBottom: "16px", marginLeft: "8px",
+            }}>
+              {stockLabel}
+            </span>
+          )}
 
           {/* Gender badge — اختياري */}
           {["female","male","kids"].includes(product.gender) && (
@@ -276,9 +295,7 @@ function Product() {
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             {isSoldOut ? (
-              <button disabled style={{ padding: "12px 28px", borderRadius: "12px", border: "none", background: "#333", color: "#666", cursor: "not-allowed", fontWeight: "bold" }}>
-                Sold Out ❌
-              </button>
+              <StockAlertButton productId={product.id} productName={product.name} />
             ) : (
               <button onClick={() => {
                 if (needsRingSize && !ringSize.trim()) { showToast("أدخل مقاسك أولاً ⚠️", "warning"); return; }
@@ -313,7 +330,7 @@ function Product() {
           {(() => {
             const available = getAvailableStock();
             const inCart = getCartQty();
-            if (inCart > 0 && available > 0) {
+            if (!product.customizable && inCart > 0 && available > 0) {
               return (
                 <p style={{ color: "#f59e0b", fontSize: "12px", marginTop: "10px" }}>
                   🛒 لديك {inCart} في السلة — متبقي {available - inCart} قطعة

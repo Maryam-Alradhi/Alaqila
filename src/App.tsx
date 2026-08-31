@@ -31,6 +31,7 @@ import Login from "./Login";
 import Profile from "./Profile";
 import Orders from "./Orders";
 import { useAuth } from "./AuthContext";
+import { getActiveDiscount, getDiscountedPrice } from "./pricing";
 
 // ✅ Module-level products cache — survives re-renders, cleared on page reload
 let _productsCache: any[] | null = null;
@@ -368,9 +369,10 @@ function App() {
                   <p style={{ color: "var(--text-muted)" }}>لا توجد منتجات مطابقة</p>
                 </div>
               ) : filteredProducts.map((product, i) => {
-                const soldOut = product.sizes ? Object.values(product.sizes).every((q:any) => Number(q)===0) : Number(product.quantity??0)===0;
+                // ✅ منتج مصنوع حسب الطلب ما يخضع لمخزون — دايماً متاح، بدون بادج "نفذ" أو "باقي كذا"
+                const soldOut = product.customizable ? false : product.sizes ? Object.values(product.sizes).every((q:any) => Number(q)===0) : Number(product.quantity??0)===0;
                 const stockNum = product.sizes ? Object.values(product.sizes).reduce((s:number,q:any) => s+Number(q),0) : Number(product.quantity??0);
-                const lowStock = !soldOut && stockNum <= 3;
+                const lowStock = !product.customizable && !soldOut && stockNum <= 3;
                 return (
                   <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
                     className="product-card animate-slideUp"
@@ -397,9 +399,15 @@ function App() {
                     <div style={{ padding: "13px" }}>
                       <h3 style={{ color: "var(--gold)", margin: "0 0 4px", fontSize: "14px", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</h3>
                       <p style={{ color: "var(--text-dim)", margin: 0, fontSize: "13px", fontWeight: "600" }}>
-                        {product.category === "necklace" && Array.isArray(product.necklaceTypes) && product.necklaceTypes.length > 0
-                          ? `يبدأ من ${Math.min(...product.necklaceTypes.map((t:any)=>Number(t.price)||0))} BD`
-                          : `${product.price} BD`}
+                        {product.category === "necklace" && Array.isArray(product.necklaceTypes) && product.necklaceTypes.length > 0 ? (
+                          `يبدأ من ${Math.min(...product.necklaceTypes.map((t:any)=>Number(t.price)||0))} BD`
+                        ) : getActiveDiscount(product) > 0 ? (
+                          <>
+                            <span style={{ color: "#ef4444", fontSize: "11px", fontWeight: "800", marginLeft: "6px" }}>-{getActiveDiscount(product)}%</span>
+                            <span style={{ color: "#888", textDecoration: "line-through", fontSize: "11px", marginLeft: "4px" }}>{product.price} BD</span>
+                            <span>{getDiscountedPrice(product).toFixed(3)} BD</span>
+                          </>
+                        ) : `${product.price} BD`}
                       </p>
                     </div>
                   </div>

@@ -97,7 +97,7 @@ function TrackOrder() {
       // ✅ الكمية تُخصم فوراً وقت الطلب الآن — لو الطلب لسا اتخصمت كميته، نرجعها للمخزون وقت الإلغاء
       if (order.stockDeducted) {
         for (const item of (order.items || [])) {
-          if (!item?.id) continue;
+          if (!item?.id || item.customizable) continue;
           try {
             await updateDoc(doc(db,"products",item.id), { quantity: increment(item.quantity||0) });
           } catch { /* نكمل حتى لو فشل إرجاع منتج معيّن */ }

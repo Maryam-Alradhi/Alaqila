@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { CartContext } from "./CartContext";
+import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
 import customerServiceIcon from "./assets/icons/customer-service.png";
 import fastDeliveryIcon from "./assets/icons/fast-delivery.png";
@@ -11,6 +12,7 @@ import securePaymentIcon from "./assets/icons/secure-payment.png";
 
 function Cart() {
   const { cart, addToCart, decreaseQuantity, removeFromCart, coupon, applyCoupon, clearCoupon } = useContext(CartContext);
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -43,6 +45,9 @@ function Cart() {
     }
     if (code !== couponSettings.code) {
       showToast("كود الخصم غير صحيح ❌", "error"); setApplying(false); return;
+    }
+    if (Array.isArray(profile?.usedCoupons) && profile.usedCoupons.includes(code)) {
+      showToast("استخدمتِ هذا الكود من قبل — صالح لمرة وحدة بس", "warning"); setApplying(false); return;
     }
     applyCoupon(code, couponSettings.discount);
     showToast("تم تطبيق كود الخصم ✅", "success");

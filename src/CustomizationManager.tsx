@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, deleteField } from "firebase/firestore";
 import { db } from "./firebase";
 import { useToast } from "./Toast";
 import { type CustomField } from "./ManageProducts";
@@ -11,6 +11,7 @@ const CATEGORIES = [
   { value: "brooch",   label: "📌 بروش" },
   { value: "bracelet", label: "💫 أساور" },
   { value: "necklace", label: "📿 سلسال" },
+  { value: "other",    label: "✨ أخرى" },
 ];
 
 // ✅ حقول جاهزة تلقائياً حسب النوع — الأدمن ما يحتاج يبنيها يدوياً
@@ -29,6 +30,10 @@ const PRESET_FIELDS: Record<string, CustomField[]> = {
   necklace: [
     { label: "النقش المطلوب", required: true },
     { label: "طول السلسال",   required: false },
+  ],
+  // ✅ فئة عامة لأي منتج مخصص ما ينطبق عليه النوع الجاهز — حقول عامة تقدرين تعدّلينها حسب الحاجة
+  other: [
+    { label: "تفاصيل الطلب المخصص", required: true },
   ],
 };
 
@@ -101,7 +106,7 @@ export default function CustomizationManager() {
     if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0) {
       showToast("أدخل سعراً صحيحاً", "warning"); return;
     }
-    if (form.images.map(s => s.trim()).filter(Boolean).length === 0) { showToast("أضف رابط صورة واحد على الأقل", "warning"); return; }
+    if (form.images.map(s => s.trim()).filter(Boolean).length === 0 && !form.video.trim()) { showToast("أضف صورة أو رابط فيديو", "warning"); return; }
     if (form.customFields.filter(f => f.label.trim()).length === 0) { showToast("أضف حقل تخصيص واحد على الأقل", "warning"); return; }
 
     const images = form.images.map(s => s.trim()).filter(Boolean);
@@ -110,19 +115,18 @@ export default function CustomizationManager() {
       price: Number(form.price),
       category: form.category,
       description: form.description.trim(),
-      image: images[0],
+      image: images[0] || "",
       images,
       video: form.video.trim(),
       customizable: true,
       customFields: form.customFields.filter(f => f.label.trim()).map(f => ({ label: f.label.trim(), required: !!f.required })),
-      // مصنوع حسب الطلب — ما يخضع لمخزون حقيقي، رقم كبير حتى ما يظهر "نفذ من المخزون"
-      quantity: 999,
     };
 
     try {
       setSaving(true);
       if (editId) {
-        await updateDoc(doc(db, "products", editId), data);
+        // ✅ نشيل حقل الكمية نهائياً (لو كان موجود من نسخة قديمة) — منتج مصنوع حسب الطلب ما يخضع لمخزون إطلاقاً
+        await updateDoc(doc(db, "products", editId), { ...data, quantity: deleteField() });
         showToast("تم التحديث ✅", "success");
       } else {
         await addDoc(collection(db, "products"), { ...data, createdAt: serverTimestamp() });
@@ -243,7 +247,7 @@ export default function CustomizationManager() {
 
                 {/* Multi-image gallery — one link per image, "+" adds another row */}
                 <div>
-                  <label style={lbl}>صور المنتج * (رابط لكل صورة — زوايا مختلفة، اضغط + لإضافة رابط ثاني)</label>
+                  <label style={lbl}>صور المنتج (اختياري لو مضبوط رابط فيديو تحت — رابط لكل صورة، اضغط + لإضافة رابط ثاني)</label>
                   <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginTop:"6px" }}>
                     {form.images.map((url, i) => {
                       const pageLinkWarning = isPageLinkNotDirect(url);

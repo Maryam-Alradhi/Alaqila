@@ -72,7 +72,13 @@ service cloud.firestore {
         || (isSignedIn() && request.auth.uid == uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["balance"])
             && request.resource.data.balance < resource.data.balance
-            && request.resource.data.balance >= 0);
+            && request.resource.data.balance >= 0)
+        // ✅ العميل يسجّل أكواد الخصم اللي استخدمها (يمنعه يستخدم نفس الكود مرتين) — القائمة تكبر بس،
+        //   ما يقدر يمسح أكواد مسجّلة قبل عشان يعيد استخدامها
+        || (isSignedIn() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["usedCoupons"])
+            && request.resource.data.usedCoupons is list
+            && request.resource.data.usedCoupons.hasAll(resource.data.get("usedCoupons", [])));
       allow delete: if isAdmin();
     }
 
@@ -145,6 +151,22 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if isAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid && resource.data.status == "pending");
+    }
+
+    // ── تنبيهات "نبهيني لما يتوفر" ──
+    // - لازم تسجيل دخول، والإيميل المسجّل لازم يطابق إيميل حسابه بالضبط — يمنع أي حد يسجّل إيميل شخص ثاني
+    //   (سبام) لأنه ما يقدر يتحكم بإيميل توكن الدخول تبعه
+    // - قراءة: الأدمن يشوف الكل (يرسل الإشعارات)، والعميل يشوف تسجيلاته هو بس (يعرف إذا مسجّل مسبقاً)
+    // - حذف: الأدمن فقط (يصفّي القائمة بعد الإرسال)
+    match /stockAlerts/{id} {
+      allow get:  if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.productId is string;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
   }
 }

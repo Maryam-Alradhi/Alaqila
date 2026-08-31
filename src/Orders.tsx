@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "./firebase";
 import { useAuth } from "./AuthContext";
+import { CartContext } from "./CartContext";
+import { useToast } from "./Toast";
 
 const statusColors: Record<string,string> = {
   pending:"#f59e0b", confirmed:"#22c55e", on_the_way:"#3b82f6",
@@ -17,9 +19,23 @@ const statusLabels: Record<string,string> = {
 export default function Orders() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { addToCart } = useContext(CartContext);
+  const { showToast } = useToast();
   const [orders,  setOrders]  = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string|null>(null);
+
+  // ✅ يضيف كل منتجات الطلب للسلة بنفس الكميات، ثم يوديك للسلة مباشرة
+  const reorder = (order: any) => {
+    const items = order.items || [];
+    if (items.length === 0) return;
+    items.forEach((item: any) => {
+      const qty = Math.max(1, Number(item.quantity) || 1);
+      for (let i = 0; i < qty; i++) addToCart(item);
+    });
+    showToast("تمت إضافة منتجات الطلب للسلة 🛒", "success");
+    navigate("/cart");
+  };
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
@@ -116,12 +132,18 @@ export default function Orders() {
                           )}
                         </div>
                       ))}
-                      <div style={{ display:"flex", justifyContent:"space-between", paddingTop:"10px", marginTop:"4px" }}>
-                        <button onClick={() => navigate(`/track/${order.orderNumber}`)} className="btn-3d"
-                          style={{ padding:"8px 16px", background:"var(--gold-dim)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius-sm)", color:"var(--gold)", cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit" }}>
-                          📍 تتبع الطلب
-                        </button>
-                        <span style={{ color:"var(--text)", fontWeight:"700", fontSize:"15px", alignSelf:"center" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:"10px", marginTop:"4px", flexWrap:"wrap", gap:"8px" }}>
+                        <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
+                          <button onClick={() => navigate(`/track/${order.orderNumber}`)} className="btn-3d"
+                            style={{ padding:"8px 16px", background:"var(--gold-dim)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius-sm)", color:"var(--gold)", cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit" }}>
+                            📍 تتبع الطلب
+                          </button>
+                          <button onClick={() => reorder(order)} className="btn-3d"
+                            style={{ padding:"8px 16px", background:"rgba(255,255,255,0.05)", border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", color:"var(--text-dim)", cursor:"pointer", fontSize:"12px", fontWeight:"600", fontFamily:"inherit" }}>
+                            🔁 إعادة الطلب
+                          </button>
+                        </div>
+                        <span style={{ color:"var(--text)", fontWeight:"700", fontSize:"15px" }}>
                           {(order.total||0).toFixed(3)} BD
                         </span>
                       </div>
