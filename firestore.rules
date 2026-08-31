@@ -19,12 +19,16 @@ service cloud.firestore {
     // - إضافة/حذف/تعديل أي حقل: الأدمن فقط
     // - استثناء ضيّق: أي مستخدم مسجّل دخول يقدر يعدّل حقل الكمية (quantity) بس — يسمح بخصم الكمية
     //   فوراً وقت تأكيد الطلب (يمنع بيع نفس القطعة لأكثر من شخص)، واسترجاعها لو ألغى طلبه بنفسه
+    // ⚠️ الفرق محدود بـ 20 وحدة كحد أقصى بكل عملية — يمنع مستخدم خبيث من تلفيق الكمية لرقم عشوائي كبير
+    //   (زي تصفير كمية منتج غيره أو تضخيمها)، مع بقاء المجال كافٍ لأي طلب حقيقي بكمية معقولة
     match /products/{id} {
       allow read:  if true;
       allow write: if isAdmin()
         || (isSignedIn()
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["quantity"])
-            && request.resource.data.quantity >= 0);
+            && request.resource.data.quantity >= 0
+            && (request.resource.data.quantity - resource.data.quantity) <= 20
+            && (resource.data.quantity - request.resource.data.quantity) <= 20);
     }
 
     // ── الطلبات ──
@@ -37,9 +41,15 @@ service cloud.firestore {
     match /orders/{id} {
       allow get:    if true;
       allow list:   if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
+      // ✅ فحوصات إضافية تمنع مستندات مفبركة/مشوّهة (سلة فاضية، إجمالي بالسالب، عدد بنود غير معقول)
       allow create: if isSignedIn()
         && request.resource.data.status == "pending"
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 30
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0;
       allow update: if isAdmin() ||
         (resource.data.status == "pending" &&
          request.resource.data.status == "rejected" &&
@@ -82,6 +92,35 @@ service cloud.firestore {
       allow get:   if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow list:  if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
       allow write: if isAdmin();
+    }
+
+    // ── تقييمات المنتجات ──
+    // - قراءة: التقييمات المعتمدة (approved) تظهر للجميع، الأدمن يشوف الكل، والعميل يشوف تقييماته
+    //   هو بس (حتى لو لسا قيد المراجعة) — يعرف إذا انتشر أو لا
+    // - إضافة: لازم تسجيل دخول + تقييم بين 1-5 + تعليق ≤1000 حرف + الحالة تبدأ "pending" دايماً
+    //   (ما تقدر تنشر مباشرة بدون موافقة الأدمن) + orderId لازم يرجع لطلب حقيقي لهذا المستخدم
+    //   وحالته "delivered" أو "collected" — يعني لازم يكون عميل فعلي أكمل عملية شراء
+    // - تعديل الحالة (موافقة/رفض): الأدمن فقط
+    // - حذف: الأدمن، أو صاحب التقييم نفسه بس وهو لسا قيد المراجعة (قبل ما يوافق عليه الأدمن)
+    match /reviews/{id} {
+      allow get:  if true;
+      allow list: if resource.data.status == "approved"
+        || isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == "pending"
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 1000
+        && request.resource.data.productId is string
+        && request.resource.data.orderId is string
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status in ["delivered","collected"];
+      allow update: if isAdmin();
+      allow delete: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid && resource.data.status == "pending");
     }
   }
 }

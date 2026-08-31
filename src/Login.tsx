@@ -98,6 +98,9 @@ export default function Login() {
         showToast("إيميل أو كلمة مرور خاطئة ❌", "error");
       else if (c.includes("email-already-in-use"))
         showToast("هذا الإيميل مسجّل مسبقاً", "error");
+      // ✅ فايربيس يوقف المحاولات تلقائياً من السيرفر بعد عدة محاولات فاشلة متتالية (حماية جاهزة ضد التخمين)
+      else if (c.includes("too-many-requests"))
+        showToast("محاولات كثيرة جداً، انتظري شوي وحاولي مرة ثانية ⏳", "warning");
       else showToast("حدث خطأ، حاول مجدداً", "error");
     } finally { setLoading(false); }
   };

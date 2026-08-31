@@ -18,8 +18,14 @@ function AdminLogin() {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
       showToast("تم تسجيل الدخول ✅", "success");
-    } catch {
-      showToast("إيميل أو كلمة مرور خاطئة ❌", "error");
+    } catch (err: any) {
+      // ✅ فايربيس يوقف المحاولات تلقائياً من السيرفر بعد عدة محاولات فاشلة متتالية — حماية جاهزة ضد
+      // تخمين كلمة مرور الأدمن، ما تحتاج كود إضافي (وأي عداد محاولات بالمتصفح نفسه يُلتف عليه بسهولة)
+      if (String(err?.code || "").includes("too-many-requests")) {
+        showToast("محاولات كثيرة جداً، انتظري شوي وحاولي مرة ثانية ⏳", "warning");
+      } else {
+        showToast("إيميل أو كلمة مرور خاطئة ❌", "error");
+      }
     } finally {
       setLoading(false);
     }

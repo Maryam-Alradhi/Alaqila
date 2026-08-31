@@ -187,6 +187,7 @@ export default function Checkout() {
           name:    name.trim(),
           phone:   phone.trim(),
           address: address.trim(),
+          email:   user?.email ?? null, // ✅ نحتاجه لاحقاً لإرسال إشعار بريدي عند تغيّر حالة الطلب
         },
         notes:         notes.trim(),
         items:         cleanItems,
@@ -206,10 +207,25 @@ export default function Checkout() {
       await setDoc(doc(db,"orders",orderNumber), orderData);
 
       // ✅ خصم الكمية فوراً من كل منتج بالسلة — best-effort، ما يوقف الطلب لو فشل بند وحد
+      // وبعد الخصم، لو الكمية المتبقية وصلت 3 أو أقل، نرسل تنبيه ntfy للأدمن (نفس قناة إشعار الطلبات)
       for (const item of cart) {
         if (!item?.id) continue;
         try {
-          await updateDoc(doc(db,"products",item.id), { quantity: increment(-(item.quantity||0)) });
+          const ref = doc(db,"products",item.id);
+          await updateDoc(ref, { quantity: increment(-(item.quantity||0)) });
+          try {
+            const snap = await getDoc(ref);
+            const remaining = Number(snap.data()?.quantity ?? -1);
+            if (ntfyTopic && remaining >= 0 && remaining <= 1) {
+              fetch(`https://ntfy.sh/${encodeURIComponent(ntfyTopic)}`, {
+                method: "POST",
+                headers: { "Title": "تنبيه مخزون منخفض", "Priority": "default", "Tags": "warning" },
+                body: remaining === 0
+                  ? `⚠️ "${item.name}" نفذ من المخزون بالكامل`
+                  : `⚠️ "${item.name}" باقي منه ${remaining} فقط بالمخزون`,
+              });
+            }
+          } catch { /* التنبيه اختياري، ما يوقف الطلب */ }
         } catch { /* نكمل حتى لو فشل خصم منتج معيّن */ }
       }
 

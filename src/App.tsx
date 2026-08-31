@@ -18,6 +18,8 @@ import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import Product from "./Product";
 import Cart from "./Cart";
 import { CartContext } from "./CartContext";
+import Wishlist from "./Wishlist";
+import { WishlistContext } from "./WishlistContext";
 import Checkout from "./Checkout";
 import Admin from "./Admin";
 import AdminLogin from "./AdminLogin";
@@ -62,6 +64,7 @@ function App() {
   const [dropdown, setDropdown] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const { cart } = useContext(CartContext);
+  const { wishlist, isWishlisted, toggleWishlist } = useContext(WishlistContext);
   const { user, profile, isAdmin, loading: authLoading, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -242,6 +245,17 @@ function App() {
               </button>
             )}
 
+            {/* Wishlist */}
+            <button onClick={() => navigate("/wishlist")} className="btn-3d"
+              style={{ position: "relative", width: "40px", height: "40px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              💛
+              {wishlist.length > 0 && (
+                <span style={{ position: "absolute", top: "-4px", left: "-4px", background: "var(--gold)", color: "#000", borderRadius: "50%", width: "16px", height: "16px", fontSize: "9px", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {wishlist.length}
+                </span>
+              )}
+            </button>
+
             {/* Cart */}
             <button onClick={() => navigate("/cart")} className="btn-3d"
               style={{ position: "relative", width: "40px", height: "40px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -360,10 +374,14 @@ function App() {
                 return (
                   <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
                     className="product-card animate-slideUp"
-                    style={{ animationDelay: `${i * 0.04}s` }}>
+                    style={{ animationDelay: `${i * 0.04}s`, position: "relative" }}>
+                    <button onClick={e => { e.stopPropagation(); toggleWishlist(product.id); }} className="btn-3d"
+                      style={{ position: "absolute", top: "8px", right: "8px", zIndex: 2, width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.15)", color: isWishlisted(product.id) ? "#ef4444" : "white", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+                      {isWishlisted(product.id) ? "♥" : "♡"}
+                    </button>
                     {soldOut && <div className="badge-overlay badge-red">Sold Out</div>}
                     {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
-                    {product.isNew && <div className="badge-overlay badge-green badge-right">جديد ✨</div>}
+                    {product.isNew && <div className="badge-overlay badge-green badge-right" style={{ top: "40px" }}>جديد ✨</div>}
                     {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة حسب الطلب</div>}
                     {["female","male","kids"].includes(product.gender) && (
                       <div className="badge-overlay" style={{ top: "auto", bottom: "8px", left: "8px", right: "auto", background: "rgba(0,0,0,0.7)", color: "white" }}>
@@ -394,6 +412,7 @@ function App() {
 
         <Route path="/product/:id"         element={<Product />} />
         <Route path="/cart"                element={<Cart />} />
+        <Route path="/wishlist"            element={<Wishlist />} />
         <Route path="/checkout"            element={<Checkout />} />
         <Route path="/track"               element={<TrackOrder />} />
         <Route path="/track/:orderNumber"  element={<TrackOrder />} />

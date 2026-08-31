@@ -4,6 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { CartContext } from "./CartContext";
+import { WishlistContext } from "./WishlistContext";
+import ProductReviews from "./ProductReviews";
 import { useToast } from "./Toast";
 
 function Product() {
@@ -11,6 +13,7 @@ function Product() {
   const [product, setProduct] = useState<any>(null);
   const navigate = useNavigate();
   const { cart, addToCart } = useContext(CartContext);
+  const { isWishlisted, toggleWishlist } = useContext(WishlistContext);
   const { showToast } = useToast();
   const [activeImage, setActiveImage] = useState(0);
   const [customValues, setCustomValues] = useState<Record<number, string>>({});
@@ -119,7 +122,7 @@ function Product() {
   };
 
   return (
-    <div style={{ background: "#0B0F1A", minHeight: "100vh", padding: "40px 16px", display: "flex", justifyContent: "center" }}>
+    <div style={{ background: "#0B0F1A", minHeight: "100vh", padding: "40px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <div style={{
         display: "flex", gap: "40px", flexWrap: "wrap", alignItems: "flex-start",
         background: "#111", padding: "28px", borderRadius: "20px",
@@ -170,7 +173,13 @@ function Product() {
 
         {/* Details */}
         <div style={{ color: "white", flex: "1 1 240px" }}>
-          <h1 className="font-display" style={{ color: "#D4AF37", marginBottom: "8px", fontSize: "clamp(20px,4vw,28px)" }}>{product.name}</h1>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+            <h1 className="font-display" style={{ color: "#D4AF37", marginBottom: "8px", fontSize: "clamp(20px,4vw,28px)" }}>{product.name}</h1>
+            <button onClick={() => toggleWishlist(product.id)} className="btn-3d"
+              style={{ flexShrink: 0, width: "38px", height: "38px", borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid #333", color: isWishlisted(product.id) ? "#ef4444" : "#aaa", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {isWishlisted(product.id) ? "♥" : "♡"}
+            </button>
+          </div>
           <h2 style={{ color: "#ccc", marginBottom: "12px", fontSize: "clamp(16px,3vw,22px)" }}>
             {needsNecklaceType && !selectedType ? `يبدأ من ${displayPrice} BD` : `${displayPrice} BD`}
           </h2>
@@ -315,6 +324,8 @@ function Product() {
           })()}
         </div>
       </div>
+
+      <ProductReviews productId={product.id} productName={product.name} />
 
       {/* ── Customization confirmation modal ── */}
       {showConfirm && createPortal(

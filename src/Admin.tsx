@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, deleteDoc, doc, query, orderBy, onSnapshot, writeBatch, increment, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import emailjs from "@emailjs/browser";
 import { db, auth } from "./firebase";
 import { useToast } from "./Toast";
 import { awardLoyaltyBalance } from "./LoyaltyService";
@@ -11,6 +12,7 @@ import NotificationSettings from "./NotificationSettings";
 import StoreSettings from "./StoreSettings";
 import Customers from "./Customers";
 import Notifications from "./Notifications";
+import ReviewsManager from "./ReviewsManager";
 
 // ── أيقونات القائمة الجانبية ──
 import ordersIcon from "./assets/icons/orders.png";
@@ -19,6 +21,7 @@ import customizationIcon from "./assets/icons/customization.png";
 import customersIcon from "./assets/icons/customers.png";
 import notificationsIcon from "./assets/icons/notifications.png";
 import statisticsIcon from "./assets/icons/statistics.png";
+import reviewsIcon from "./assets/icons/quality.png";
 import settingIcon from "./assets/icons/setting.png";
 import telegramSettingIcon from "./assets/icons/telegram-setting.png";
 import whatsappIcon from "./assets/icons/whatsapp.png";
@@ -30,7 +33,7 @@ import deliveredIcon from "./assets/icons/delivered.png";
 import collectedIcon from "./assets/icons/collected.png";
 import rejectedIcon from "./assets/icons/rejected.png";
 
-type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"ntfy"|"store";
+type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"ntfy"|"store"|"reviews";
 type OrderStatus = "pending"|"confirmed"|"on_the_way"|"delivered"|"collected"|"rejected";
 
 const deliverySteps = ["pending","confirmed","on_the_way","delivered"];
@@ -51,6 +54,36 @@ const statusIcons: Record<string,string> = {
   pending:pendingIcon, confirmed:confirmedIcon, on_the_way:onTheWayIcon,
   delivered:deliveredIcon, collected:collectedIcon, rejected:rejectedIcon,
 };
+
+const paymentStatusLabels: Record<string,string> = {
+  cod: "لم يُدفع بعد (كاش عند الاستلام)",
+  benefit: "تم الدفع (تحويل Benefit)",
+  balance: "مدفوع بالكامل من الرصيد",
+};
+
+// ✅ إشعار بريدي للعميل عند تغيّر حالة الطلب — بس للحالات الثلاث المهمة، عشان نوفر حصة EmailJS المجانية
+// يعمل فقط لو ضُبطت مفاتيح EmailJS بملف .env، وإلا يتجاهل الإرسال بصمت بدون ما يوقف تحديث الطلب
+async function sendOrderStatusEmail(order: any, status: OrderStatus) {
+  const serviceId  = import.meta.env.VITE_EMAILJS_SERVICE_ID as string | undefined;
+  const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string | undefined;
+  const publicKey  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string | undefined;
+  if (!serviceId || !templateId || !publicKey) return;
+  if (!["confirmed","on_the_way","rejected"].includes(status)) return;
+  const email = order?.customer?.email;
+  if (!email) return;
+  try {
+    await emailjs.send(serviceId, templateId, {
+      to_email: email,
+      customer_name: order.customer?.name || "عميلنا",
+      order_number: order.orderNumber,
+      status_label: statusLabels[status] || status,
+      payment_status_label: paymentStatusLabels[order.paymentMethod] || "—",
+      total: Number(order.total || 0).toFixed(3),
+    }, { publicKey });
+  } catch {
+    // ✅ فشل إرسال الإيميل ما يوقف تحديث حالة الطلب — العملية الأساسية أهم
+  }
+}
 const statusColors: Record<string,string> = {
   pending:"#f59e0b", confirmed:"#22c55e", on_the_way:"#3b82f6",
   delivered:"#8b5cf6", collected:"#8b5cf6", rejected:"#ef4444",
@@ -61,6 +94,7 @@ const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
   { key:"products",      icon:productsIcon,        label:"المنتجات",        group:"main" },
   { key:"customization", icon:customizationIcon,   label:"صياغة حسب الطلب",         group:"main" },
   { key:"customers",     icon:customersIcon,       label:"العملاء",         group:"main" },
+  { key:"reviews",       icon:reviewsIcon,         label:"التقييمات",       group:"main" },
   { key:"notifications", icon:notificationsIcon,   label:"الإشعارات",       group:"main" },
   { key:"stats",         icon:statisticsIcon,      label:"الإحصائيات",      group:"main" },
   { key:"store",         icon:settingIcon,         label:"إعدادات المتجر",  group:"settings" },
@@ -142,6 +176,9 @@ export default function Admin() {
       if (status === "rejected" && order?.stockDeducted) {
         showToast("📦 تم إرجاع كمية المنتجات للمخزون تلقائياً", "info");
       }
+
+      // ✅ إشعار العميل بالإيميل (لو مفعّل ومتوفر إيميله بالطلب)
+      if (order) sendOrderStatusEmail(order, status);
 
       // Award loyalty balance when order is completed
       if (status === "delivered" || status === "collected") {
@@ -334,6 +371,7 @@ export default function Admin() {
           {tab==="products"      && <div className="animate-fadeIn"><ManageProducts /></div>}
           {tab==="customization" && <div className="animate-fadeIn"><CustomizationManager /></div>}
           {tab==="customers"     && <div className="animate-fadeIn"><Customers /></div>}
+          {tab==="reviews"       && <div className="animate-fadeIn"><ReviewsManager /></div>}
           {tab==="notifications" && <div className="animate-fadeIn"><Notifications /></div>}
           {tab==="ntfy"          && <div className="animate-fadeIn"><NotificationSettings /></div>}
           {tab==="store"         && <div className="animate-fadeIn"><StoreSettings /></div>}
