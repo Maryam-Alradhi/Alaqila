@@ -43,6 +43,7 @@ const DEFAULT_CATS = [
   { value:"necklace", label:"سلاسل" },
   { value:"bracelet", label:"أساور" },
   { value:"misbaha",  label:"مسابيح", icon:"📿" },
+  { value:"other",    label:"أخرى", icon:"✨" },
 ];
 
 const CAT_ICONS: Record<string,string> = {
@@ -52,9 +53,12 @@ const CAT_ICONS: Record<string,string> = {
   bracelets: braceletCatIcon,
 };
 
-// ✅ نضمن ظهور "مسابيح" بتبويبات المتجر حتى لو مستند إعدادات الأقسام بفايرستور ما تحدّث بعد
-const ensureMisbaha = (cats: any[]) =>
-  cats.some(c => c.value === "misbaha") ? cats : [...cats, { value:"misbaha", label:"مسابيح", icon:"📿" }];
+// ✅ نضمن ظهور "مسابيح" و"أخرى" بتبويبات المتجر حتى لو مستند إعدادات الأقسام بفايرستور ما تحدّث بعد
+const ensureMisbaha = (cats: any[]) => {
+  let result = cats.some(c => c.value === "misbaha") ? cats : [...cats, { value:"misbaha", label:"مسابيح", icon:"📿" }];
+  result = result.some(c => c.value === "other") ? result : [...result, { value:"other", label:"أخرى", icon:"✨" }];
+  return result;
+};
 
 function App() {
   const [products, setProducts] = useState<any[]>(_productsCache ?? []);
@@ -335,7 +339,7 @@ function App() {
                 <img src={allCatIcon} alt="" style={{ width:"15px", height:"15px", objectFit:"contain", filter:category==="all"?"none":"invert(1)" }} />
                 الكل
               </button>
-              {categories.filter(cat => cat.value !== "other").map(cat => (
+              {categories.map(cat => (
                 <button key={cat.value} onClick={() => setCategory(cat.value)} className="btn-3d"
                   style={{ padding:"9px 18px", borderRadius:"99px", border:`1.5px solid ${category===cat.value?"var(--gold)":"var(--border)"}`, background:category===cat.value?"var(--gold)":"transparent", color:category===cat.value?"#000":"var(--text-muted)", fontWeight:"700", cursor:"pointer", fontSize:"13px", transition:"var(--transition)", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:"6px" }}>
                   {CAT_ICONS[cat.value]

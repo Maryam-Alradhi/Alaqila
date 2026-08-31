@@ -7,6 +7,8 @@ const DEFAULT_CATEGORIES = [
   { value: "rings",    label: "خواتم",  icon: "💍" },
   { value: "necklace", label: "سلاسل",  icon: "📿" },
   { value: "bracelet", label: "أساور",  icon: "✨" },
+  { value: "misbaha",  label: "مسابيح", icon: "📿" },
+  { value: "other",    label: "أخرى",   icon: "✨" },
 ];
 
 export default function StoreSettings() {
