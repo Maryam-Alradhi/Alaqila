@@ -72,7 +72,7 @@ function Cart() {
         <div key={index} className="card" style={{ display: "flex", alignItems: "center", gap: "18px", marginBottom: "14px", padding: "18px" }}>
           <div style={{ textAlign: "left", flexShrink: 0, order: 3 }}>
             <p style={{ color: "#D4AF37", fontWeight: "bold", margin: "0 0 8px", fontSize: "17px" }}>BD {(item.price * item.quantity).toFixed(3)}</p>
-            <button onClick={() => { removeFromCart(item.id, item.selectedSize, item.customization); showToast("تم الحذف من السلة","info"); }}
+            <button onClick={() => { removeFromCart(item.id, item.selectedSize, item.customization, item.selectedNecklaceType); showToast("تم الحذف من السلة","info"); }}
               className="btn-3d"
               style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", padding: "6px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}>
               حذف
@@ -82,6 +82,7 @@ function Cart() {
           <div style={{ flex: 1, minWidth: 0, order: 2 }}>
             <h3 style={{ color: "#D4AF37", margin: "0 0 6px", fontSize: "15px", fontWeight: "700" }}>{item.name}</h3>
             {item.selectedSize && <p style={{ color: "#888", margin: "0 0 4px", fontSize: "12px" }}>المقاس: {item.selectedSize}</p>}
+            {item.selectedNecklaceType && <p style={{ color: "#888", margin: "0 0 4px", fontSize: "12px" }}>النوع: {item.selectedNecklaceType}</p>}
             {Array.isArray(item.customization) && item.customization.length > 0 && (
               <div style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "8px", padding: "6px 10px", margin: "0 0 6px" }}>
                 {item.customization.map((c: any, ci: number) => (
@@ -93,7 +94,7 @@ function Cart() {
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <button onClick={() => addToCart(item)} className="btn-3d" style={qtyBtn}>+</button>
               <span style={{ color: "white", minWidth: "24px", textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
-              <button onClick={() => { decreaseQuantity(item.id, item.selectedSize, item.customization); }} className="btn-3d" style={qtyBtn}>−</button>
+              <button onClick={() => { decreaseQuantity(item.id, item.selectedSize, item.customization, item.selectedNecklaceType); }} className="btn-3d" style={qtyBtn}>−</button>
             </div>
           </div>
 

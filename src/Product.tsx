@@ -16,12 +16,14 @@ function Product() {
   const [customValues, setCustomValues] = useState<Record<number, string>>({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [ringSize, setRingSize] = useState("");
+  const [selectedType, setSelectedType] = useState<{ name: string; price: number } | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setActiveImage(0);
     setRingSize("");
+    setSelectedType(null);
     getDoc(doc(db, "products", id)).then(snap => {
       if (snap.exists()) setProduct({ id: snap.id, ...snap.data() });
     });
@@ -92,6 +94,12 @@ function Product() {
   // ✅ خواتم غير مخصصة — نطلب مقاس العميل كنص حر بدل نظام المقاسات القديم
   const needsRingSize = product.category === "rings" && !product.customizable;
 
+  // ✅ سلاسل بأنواع مختلفة الأسعار — العميل لازم يختار نوع قبل الإضافة للسلة
+  const necklaceTypes: { name: string; price: number }[] = Array.isArray(product.necklaceTypes) ? product.necklaceTypes : [];
+  const needsNecklaceType = product.category === "necklace" && necklaceTypes.length > 0;
+  const minTypePrice = needsNecklaceType ? Math.min(...necklaceTypes.map(t => Number(t.price) || 0)) : null;
+  const displayPrice = needsNecklaceType ? (selectedType ? selectedType.price : minTypePrice) : product.price;
+
   const missingRequiredField = () => customFields.some((field, i) => field.required && !customValues[i]?.trim());
 
   const buildCustomizationPayload = () =>
@@ -104,6 +112,7 @@ function Product() {
     addToCart({
       ...product,
       ...(needsRingSize ? { selectedSize: ringSize.trim() } : {}),
+      ...(needsNecklaceType && selectedType ? { selectedNecklaceType: selectedType.name, price: selectedType.price } : {}),
       ...(customization && customization.length ? { customization } : {}),
     });
     showToast(`تمت إضافة "${product.name}" للسلة 🛒`, "success");
@@ -162,7 +171,9 @@ function Product() {
         {/* Details */}
         <div style={{ color: "white", flex: "1 1 240px" }}>
           <h1 className="font-display" style={{ color: "#D4AF37", marginBottom: "8px", fontSize: "clamp(20px,4vw,28px)" }}>{product.name}</h1>
-          <h2 style={{ color: "#ccc", marginBottom: "12px", fontSize: "clamp(16px,3vw,22px)" }}>{product.price} BD</h2>
+          <h2 style={{ color: "#ccc", marginBottom: "12px", fontSize: "clamp(16px,3vw,22px)" }}>
+            {needsNecklaceType && !selectedType ? `يبدأ من ${displayPrice} BD` : `${displayPrice} BD`}
+          </h2>
 
           {/* Stock badge */}
           <span style={{
@@ -175,14 +186,14 @@ function Product() {
           </span>
 
           {/* Gender badge — اختياري */}
-          {(product.gender === "female" || product.gender === "male") && (
+          {["female","male","kids"].includes(product.gender) && (
             <span style={{
               display: "inline-block", padding: "4px 12px", borderRadius: "20px",
               background: "rgba(255,255,255,0.06)", color: "#ccc",
               border: "1px solid #333", fontSize: "13px",
               fontWeight: "bold", marginBottom: "16px",
             }}>
-              {product.gender === "female" ? " نسائي" : " رجالي"}
+              {product.gender === "female" ? " نسائي" : product.gender === "male" ? " رجالي" : "👶 أطفال"}
             </span>
           )}
 
@@ -195,6 +206,29 @@ function Product() {
               <input className="inp" value={ringSize}
                 onChange={e => setRingSize(e.target.value)}
                 placeholder="مثال: 17" />
+            </div>
+          )}
+
+          {/* نوع السلسلة — لازم يختار العميل عشان نحدد السعر */}
+          {needsNecklaceType && (
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", color: "#aaa", fontSize: "13px", marginBottom: "8px" }}>
+                نوع السلسلة <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {necklaceTypes.map((t, i) => (
+                  <button key={i} onClick={() => setSelectedType(t)} className="btn-3d"
+                    style={{
+                      padding: "9px 16px", borderRadius: "10px",
+                      border: `2px solid ${selectedType?.name === t.name ? "#D4AF37" : "#333"}`,
+                      background: selectedType?.name === t.name ? "rgba(212,175,55,0.12)" : "transparent",
+                      color: selectedType?.name === t.name ? "#D4AF37" : "#aaa",
+                      cursor: "pointer", fontSize: "13px", fontWeight: "700", fontFamily: "inherit",
+                    }}>
+                    {t.name} — {t.price} BD
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -239,6 +273,7 @@ function Product() {
             ) : (
               <button onClick={() => {
                 if (needsRingSize && !ringSize.trim()) { showToast("أدخل مقاسك أولاً ⚠️", "warning"); return; }
+                if (needsNecklaceType && !selectedType) { showToast("اختر نوع السلسلة أولاً ⚠️", "warning"); return; }
 
                 // ✅ Check stock vs cart quantity before adding
                 const available = getAvailableStock();

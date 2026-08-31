@@ -323,7 +323,7 @@ function TrackOrder() {
                       <div key={i} style={{ padding:"7px 0", borderBottom:"1px solid var(--border)" }}>
                         <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
                           {item.image && <img src={item.image} alt="" style={{ width:"32px", height:"32px", objectFit:"cover", borderRadius:"6px", flexShrink:0 }} />}
-                          <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize && ` (م${item.selectedSize})`}</span>
+                          <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize && ` (م${item.selectedSize})`}{item.selectedNecklaceType && ` (${item.selectedNecklaceType})`}</span>
                           <span style={{ color:"var(--text-muted)", fontSize:"11px" }}>×{item.quantity}</span>
                           <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price * item.quantity).toFixed(3)} BD</span>
                         </div>
@@ -425,7 +425,7 @@ function TrackOrder() {
                 <div key={i} style={{ padding:"6px 0", borderBottom:"1px solid var(--border)" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <span style={{ color:"var(--text-dim)", fontSize:"13px" }}>
-                      {item.name}{item.selectedSize&&` (م${item.selectedSize})`} × {item.quantity}
+                      {item.name}{item.selectedSize&&` (م${item.selectedSize})`}{item.selectedNecklaceType&&` (${item.selectedNecklaceType})`} × {item.quantity}
                     </span>
                     <span style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
                   </div>

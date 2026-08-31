@@ -45,6 +45,7 @@ export function CartProvider({ children }: any) {
   // ✅ Customized items (each with its own engraving/etc.) never merge with each other — only identical customization merges
   const sameLine = (a: any, b: any) =>
     a.id === b.id && a.selectedSize === b.selectedSize &&
+    (a.selectedNecklaceType ?? null) === (b.selectedNecklaceType ?? null) &&
     JSON.stringify(a.customization ?? null) === JSON.stringify(b.customization ?? null);
 
   const addToCart = useCallback((product: any) => {
@@ -59,11 +60,11 @@ export function CartProvider({ children }: any) {
     });
   }, []);
 
-  const decreaseQuantity = useCallback((id: string, selectedSize?: string, customization?: any) => {
+  const decreaseQuantity = useCallback((id: string, selectedSize?: string, customization?: any, selectedNecklaceType?: string) => {
     setCart(prev =>
       prev
         .map((item) =>
-          sameLine(item, { id, selectedSize, customization })
+          sameLine(item, { id, selectedSize, customization, selectedNecklaceType })
             ? { ...item, quantity: item.quantity - 1 }
             : item
         )
@@ -71,9 +72,9 @@ export function CartProvider({ children }: any) {
     );
   }, []);
 
-  const removeFromCart = useCallback((id: string, selectedSize?: string, customization?: any) => {
+  const removeFromCart = useCallback((id: string, selectedSize?: string, customization?: any, selectedNecklaceType?: string) => {
     setCart(prev =>
-      prev.filter((item) => !sameLine(item, { id, selectedSize, customization }))
+      prev.filter((item) => !sameLine(item, { id, selectedSize, customization, selectedNecklaceType }))
     );
   }, []);
 

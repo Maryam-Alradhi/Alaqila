@@ -9,12 +9,14 @@ import { useToast } from "./Toast";
 
 const CATEGORIES = [
   { value: "rings",    label: "💍 خواتم" },
-  { value: "necklace", label: "📿 سلاسل" },
+  { value: "necklace", label: "⛓️ سلاسل" },
   { value: "bracelet", label: "💫 أساور" },
+  { value: "misbaha",  label: "📿 مسابيح" },
   { value: "other",    label: "✨ أخرى" },
 ];
 
 export type CustomField = { label: string; required: boolean };
+export type NecklaceType = { name: string; price: string };
 
 const emptyForm = {
   name: "", price: "", category: "rings", description: "",
@@ -23,7 +25,9 @@ const emptyForm = {
   isNew: false,
   isFeatured: false,
   discount: "",
-  gender: "" as "" | "female" | "male", // ✅ اختياري — فاضي معناه للجنسين
+  gender: "" as "" | "female" | "male" | "kids", // ✅ اختياري — فاضي معناه للجميع
+  // ✅ أنواع السلسلة — تظهر بس لقسم "سلاسل"، كل نوع له سعره الخاص، والعميل يختار وقت الطلب
+  necklaceTypes: [] as NecklaceType[],
 };
 
 // ✅ يكشف روابط صفحات العرض الشائعة (مو رابط الصورة نفسها) ويرجّع نصيحة توضح الفرق
@@ -85,7 +89,10 @@ export default function ManageProducts() {
       isNew: !!p.isNew,
       isFeatured: !!p.isFeatured,
       discount: String(p.discount || ""),
-      gender: p.gender === "female" || p.gender === "male" ? p.gender : "",
+      gender: ["female","male","kids"].includes(p.gender) ? p.gender : "",
+      necklaceTypes: Array.isArray(p.necklaceTypes)
+        ? p.necklaceTypes.map((t: any) => ({ name: String(t.name || ""), price: String(t.price ?? "") }))
+        : [],
     });
     setEditId(p.id);
     setShowForm(true);
@@ -100,6 +107,16 @@ export default function ManageProducts() {
     if (images.length === 0 && !form.video.trim()) {
       showToast("أدخل صورة أو رابط فيديو", "warning"); return;
     }
+
+    // ✅ أنواع السلسلة — نتجاهل الصفوف الفاضية تماماً، ونتحقق من أي صف فيه اسم بس بلا سعر صحيح
+    const rawTypes = form.category === "necklace" ? form.necklaceTypes.filter(t => t.name.trim() || t.price.trim()) : [];
+    for (const t of rawTypes) {
+      if (!t.name.trim()) { showToast("أدخل اسم كل نوع سلسلة أضفتيه", "warning"); return; }
+      if (!t.price || isNaN(Number(t.price)) || Number(t.price) <= 0) {
+        showToast(`أدخل سعراً صحيحاً لنوع "${t.name}"`, "warning"); return;
+      }
+    }
+    const necklaceTypes = rawTypes.map(t => ({ name: t.name.trim(), price: Number(t.price) }));
 
     const data: any = {
       name: form.name.trim(),
@@ -122,10 +139,18 @@ export default function ManageProducts() {
       setSaving(true);
       if (editId) {
         // نشيل حقل sizes القديم (إن وجد) عشان المنتج ينتقل بالكامل لنظام الكمية الموحّد
-        await updateDoc(doc(db, "products", editId), { ...data, sizes: deleteField() });
+        // ونحدّث أنواع السلسلة دايماً (نمسحها لو صارت فاضية أو تغيّر القسم عن سلاسل)
+        await updateDoc(doc(db, "products", editId), {
+          ...data, sizes: deleteField(),
+          necklaceTypes: necklaceTypes.length ? necklaceTypes : deleteField(),
+        });
         showToast("تم التحديث ✅", "success");
       } else {
-        await addDoc(collection(db, "products"), { ...data, createdAt: serverTimestamp() });
+        await addDoc(collection(db, "products"), {
+          ...data,
+          ...(necklaceTypes.length ? { necklaceTypes } : {}),
+          createdAt: serverTimestamp(),
+        });
         showToast("تمت الإضافة 🎉", "success");
       }
       setShowForm(false);
@@ -309,6 +334,34 @@ export default function ManageProducts() {
                   </select>
                 </div>
 
+                {/* أنواع السلسلة — تظهر بس لقسم "سلاسل"، كل نوع بسعره الخاص */}
+                {form.category === "necklace" && (
+                  <div>
+                    <label style={lbl}>أنواع السلسلة (اختياري)</label>
+                    <p style={{ color:"var(--text-muted)", fontSize:"11px", margin:"0 0 8px" }}>
+                      لو ضفتِ أنواع هنا، العميل لازم يختار نوع قبل ما يضيف للسلة، والسعر يتحدد حسب النوع المختار (السعر الأساسي فوق يبين كـ"يبدأ من").
+                    </p>
+                    <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                      {form.necklaceTypes.map((t, i) => (
+                        <div key={i} style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+                          <input value={t.name}
+                            onChange={e => setForm(f => ({ ...f, necklaceTypes: f.necklaceTypes.map((v, idx) => idx === i ? { ...v, name: e.target.value } : v) }))}
+                            placeholder="مثال: سلسلة فيدان" className="inp" style={{ flex:2 }} />
+                          <input type="number" value={t.price}
+                            onChange={e => setForm(f => ({ ...f, necklaceTypes: f.necklaceTypes.map((v, idx) => idx === i ? { ...v, price: e.target.value } : v) }))}
+                            placeholder="السعر" className="inp" style={{ flex:1 }} dir="ltr" />
+                          <button onClick={() => setForm(f => ({ ...f, necklaceTypes: f.necklaceTypes.filter((_, idx) => idx !== i) }))} className="btn-3d"
+                            style={{ background:"rgba(239,68,68,0.08)", color:"#ef4444", border:"1px solid rgba(239,68,68,0.25)", borderRadius:"7px", cursor:"pointer", fontSize:"12px", padding:"8px 10px", flexShrink:0 }}>🗑️</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => setForm(f => ({ ...f, necklaceTypes: [...f.necklaceTypes, { name:"", price:"" }] }))} className="btn-3d"
+                      style={{ marginTop:"8px", padding:"8px 14px", background:"rgba(184,150,46,0.08)", color:"var(--gold)", border:"1px solid var(--gold-border)", borderRadius:"8px", cursor:"pointer", fontSize:"12px", fontWeight:"700" }}>
+                      + إضافة نوع سلسلة
+                    </button>
+                  </div>
+                )}
+
                 {/* Description */}
                 <div>
                   <label style={lbl}>الوصف</label>
@@ -375,14 +428,15 @@ export default function ManageProducts() {
                   </div>
                 </div>
 
-                {/* الجنس — اختياري، لو ما اخترتِ شي يعتبر للجنسين */}
+                {/* الجنس — اختياري، لو ما اخترتِ شي يعتبر للجميع */}
                 <div>
-                  <label style={lbl}>الفئة (اختياري — اتركيه فاضي لو للجنسين)</label>
+                  <label style={lbl}>الفئة (اختياري — اتركيه فاضي لو للجميع)</label>
                   <div style={{ display:"flex", gap:"8px", marginTop:"6px" }}>
                     {[
-                      { value:"", label:"للجنسين" },
+                      { value:"", label:"للجميع" },
                       { value:"female", label:" نسائي" },
                       { value:"male", label:" رجالي" },
+                      { value:"kids", label:"👶 أطفال" },
                     ].map(g => (
                       <button key={g.value} onClick={() => setForm(f => ({ ...f, gender: g.value as any }))} className="btn-3d"
                         style={{ flex:1, padding:"9px 8px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.gender===g.value?"var(--gold)":"var(--border)"}`, background:form.gender===g.value?"var(--gold-dim)":"transparent", color:form.gender===g.value?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>

@@ -421,7 +421,7 @@ export default function Admin() {
                           <div key={j} style={{ padding:"5px 0", borderBottom:"1px solid rgba(255,255,255,0.04)" }}>
                             <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
                               {item.image && <img src={item.image} loading="lazy" decoding="async" alt="" style={{ width:"34px",height:"34px",objectFit:"cover",borderRadius:"6px",flexShrink:0 }} />}
-                              <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`} × {item.quantity}</span>
+                              <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`}{item.selectedNecklaceType&&` (${item.selectedNecklaceType})`} × {item.quantity}</span>
                               <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
                             </div>
                             {Array.isArray(item.customization) && item.customization.length > 0 && (

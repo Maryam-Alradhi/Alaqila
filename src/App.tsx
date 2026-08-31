@@ -39,6 +39,7 @@ const DEFAULT_CATS = [
   { value:"rings",    label:"خواتم" },
   { value:"necklace", label:"سلاسل" },
   { value:"bracelet", label:"أساور" },
+  { value:"misbaha",  label:"مسابيح", icon:"📿" },
 ];
 
 const CAT_ICONS: Record<string,string> = {
@@ -48,10 +49,14 @@ const CAT_ICONS: Record<string,string> = {
   bracelets: braceletCatIcon,
 };
 
+// ✅ نضمن ظهور "مسابيح" بتبويبات المتجر حتى لو مستند إعدادات الأقسام بفايرستور ما تحدّث بعد
+const ensureMisbaha = (cats: any[]) =>
+  cats.some(c => c.value === "misbaha") ? cats : [...cats, { value:"misbaha", label:"مسابيح", icon:"📿" }];
+
 function App() {
   const [products, setProducts] = useState<any[]>(_productsCache ?? []);
   const [productsLoading, setProductsLoading] = useState(_productsCache === null);
-  const [categories, setCategories] = useState<any[]>(_categoriesCache ?? DEFAULT_CATS.slice(1));
+  const [categories, setCategories] = useState<any[]>(ensureMisbaha(_categoriesCache ?? DEFAULT_CATS.slice(1)));
   const [search,   setSearch]   = useState("");
   const [category, setCategory] = useState("all");
   const [dropdown, setDropdown] = useState(false);
@@ -76,10 +81,10 @@ function App() {
 
   // ✅ Load categories from store settings
   useEffect(() => {
-    if (_categoriesCache !== null) { setCategories(_categoriesCache); return; }
+    if (_categoriesCache !== null) { setCategories(ensureMisbaha(_categoriesCache)); return; }
     getDoc(doc(db, "settings", "store")).then(snap => {
       if (snap.exists() && snap.data().categories) {
-        _categoriesCache = snap.data().categories;
+        _categoriesCache = ensureMisbaha(snap.data().categories);
         setCategories(_categoriesCache!);
       }
     }).catch(() => {});
@@ -360,9 +365,9 @@ function App() {
                     {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
                     {product.isNew && <div className="badge-overlay badge-green badge-right">جديد ✨</div>}
                     {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة حسب الطلب</div>}
-                    {(product.gender === "female" || product.gender === "male") && (
+                    {["female","male","kids"].includes(product.gender) && (
                       <div className="badge-overlay" style={{ top: "auto", bottom: "8px", left: "8px", right: "auto", background: "rgba(0,0,0,0.7)", color: "white" }}>
-                        {product.gender === "female" ? " نسائي" : " رجالي"}
+                        {product.gender === "female" ? " نسائي" : product.gender === "male" ? " رجالي" : "👶 أطفال"}
                       </div>
                     )}
                     {product.video ? (
@@ -373,7 +378,11 @@ function App() {
                     )}
                     <div style={{ padding: "13px" }}>
                       <h3 style={{ color: "var(--gold)", margin: "0 0 4px", fontSize: "14px", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</h3>
-                      <p style={{ color: "var(--text-dim)", margin: 0, fontSize: "13px", fontWeight: "600" }}>{product.price} BD</p>
+                      <p style={{ color: "var(--text-dim)", margin: 0, fontSize: "13px", fontWeight: "600" }}>
+                        {product.category === "necklace" && Array.isArray(product.necklaceTypes) && product.necklaceTypes.length > 0
+                          ? `يبدأ من ${Math.min(...product.necklaceTypes.map((t:any)=>Number(t.price)||0))} BD`
+                          : `${product.price} BD`}
+                      </p>
                     </div>
                   </div>
                 );

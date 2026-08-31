@@ -35,7 +35,8 @@ async function sendNtfyNotification(topic: string, orderNumber: string, orderDat
       const custLines = Array.isArray(item.customization) && item.customization.length
         ? "\n" + item.customization.map((c: any) => `   🎨 ${c.label}: ${c.value}`).join("\n")
         : "";
-      return `• ${item.name || ""}${item.selectedSize ? ` (${item.selectedSize})` : ""} × ${qty} — ${(price * qty).toFixed(3)} BD${custLines}`;
+      const variant = item.selectedSize || item.selectedNecklaceType;
+      return `• ${item.name || ""}${variant ? ` (${variant})` : ""} × ${qty} — ${(price * qty).toFixed(3)} BD${custLines}`;
     }).join("\n");
 
     const isDelivery = orderData.deliveryType === "delivery";
@@ -171,6 +172,7 @@ export default function Checkout() {
         quantity:     Number(item.quantity ?? 1),
         image:        item.image        ?? "",
         selectedSize: item.selectedSize ?? null,
+        selectedNecklaceType: item.selectedNecklaceType ?? null,
         customization: Array.isArray(item.customization)
           ? item.customization.map((c: any) => ({ label: String(c.label ?? ""), value: String(c.value ?? "") }))
           : null,
@@ -436,7 +438,7 @@ export default function Checkout() {
                 <div key={i} style={{ padding:"8px 0", borderBottom:"1px solid var(--border)" }}>
                   <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
                     {item.image && <img src={item.image} alt="" style={{ width:"38px",height:"38px",objectFit:"cover",borderRadius:"6px",flexShrink:0 }} />}
-                    <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{item.selectedSize&&` (${item.selectedSize})`}<br/><span style={{ color:"var(--text-muted)" }}>{item.quantity} × {item.price.toFixed(3)} BD</span></span>
+                    <span style={{ flex:1, color:"var(--text-dim)", fontSize:"12px" }}>{item.name}{(item.selectedSize||item.selectedNecklaceType)&&` (${item.selectedSize||item.selectedNecklaceType})`}<br/><span style={{ color:"var(--text-muted)" }}>{item.quantity} × {item.price.toFixed(3)} BD</span></span>
                     <span style={{ color:"var(--gold)", fontSize:"12px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
                   </div>
                   {Array.isArray(item.customization) && item.customization.length > 0 && (

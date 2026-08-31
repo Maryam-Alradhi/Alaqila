@@ -102,7 +102,7 @@ export default function Orders() {
                           <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>
                             {item.image && <img src={item.image} style={{ width:"40px",height:"40px",objectFit:"cover",borderRadius:"8px",flexShrink:0 }} alt="" />}
                             <div style={{ flex:1 }}>
-                              <p style={{ color:"var(--text)", fontSize:"13px", margin:0 }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`}</p>
+                              <p style={{ color:"var(--text)", fontSize:"13px", margin:0 }}>{item.name}{item.selectedSize&&` (م${item.selectedSize})`}{item.selectedNecklaceType&&` (${item.selectedNecklaceType})`}</p>
                               <p style={{ color:"var(--text-muted)", fontSize:"11px", margin:"2px 0 0" }}>× {item.quantity}</p>
                             </div>
                             <span style={{ color:"var(--gold)", fontSize:"13px", fontWeight:"700" }}>{(item.price*item.quantity).toFixed(3)} BD</span>
