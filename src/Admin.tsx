@@ -80,8 +80,9 @@ async function sendOrderStatusEmail(order: any, status: OrderStatus) {
       payment_status_label: paymentStatusLabels[order.paymentMethod] || "—",
       total: Number(order.total || 0).toFixed(3),
     }, { publicKey });
-  } catch {
-    // ✅ فشل إرسال الإيميل ما يوقف تحديث حالة الطلب — العملية الأساسية أهم
+  } catch (err) {
+    // ✅ فشل إرسال الإيميل ما يوقف تحديث حالة الطلب — العملية الأساسية أهم، بس نسجّل السبب بالكونسول للتشخيص
+    console.error("EmailJS send failed:", err);
   }
 }
 const statusColors: Record<string,string> = {
@@ -478,15 +479,17 @@ export default function Admin() {
                         )}
                       </div>
 
+                      {/* ✅ هذا الشريط للعرض فقط (يبيّن مراحل الطلب) — مو أزرار تحكم، عشان محد يغيّر حالة
+                          الطلب بالخطأ بضغطة وحدة (كان قبل كذا وهذا سبب مشكلة "رجوع الطلب المكتمل لقيد الانتظار") */}
                       {order.status!=="rejected" && (
                         <div style={{ padding:"10px 18px", borderTop:"1px solid var(--border)", display:"flex", gap:"4px", overflowX:"auto" }}>
                           {steps.map((step,idx)=>(
-                            <div key={step} onClick={()=>updateStatus(order.id,step as OrderStatus)}
+                            <div key={step}
                               style={{ flex:1, minWidth:"60px", textAlign:"center", padding:"6px 4px", borderRadius:"8px",
                                 background:idx<=curIdx?"rgba(212,175,55,0.1)":"transparent",
                                 border:`1px solid ${idx<=curIdx?"var(--gold-border)":"var(--border)"}`,
                                 color:idx<=curIdx?"var(--gold)":"var(--text-muted)",
-                                fontSize:"10px", cursor:"pointer", whiteSpace:"nowrap", transition:"var(--transition)", fontWeight:idx===curIdx?"700":"400",
+                                fontSize:"10px", cursor:"default", whiteSpace:"nowrap", transition:"var(--transition)", fontWeight:idx===curIdx?"700":"400",
                                 display:"flex", flexDirection:"column", alignItems:"center", gap:"3px" }}>
                               <img src={statusIcons[step]} alt="" style={{ width:"14px", height:"14px", objectFit:"contain", filter:"invert(1)" }} />
                               {statusLabels[step]}
