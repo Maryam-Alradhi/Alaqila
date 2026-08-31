@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, deleteDoc, doc, query, orderBy, onSnapshot, writeBatch, increment, getDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, query, orderBy, onSnapshot, writeBatch, increment, getDoc, serverTimestamp } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import emailjs from "@emailjs/browser";
 import { db, auth } from "./firebase";
@@ -13,6 +13,7 @@ import StoreSettings from "./StoreSettings";
 import Customers from "./Customers";
 import Notifications from "./Notifications";
 import ReviewsManager from "./ReviewsManager";
+import ReturnRequestsManager from "./ReturnRequestsManager";
 
 // ── أيقونات القائمة الجانبية ──
 import ordersIcon from "./assets/icons/orders.png";
@@ -22,6 +23,7 @@ import customersIcon from "./assets/icons/customers.png";
 import notificationsIcon from "./assets/icons/notifications.png";
 import statisticsIcon from "./assets/icons/statistics.png";
 import reviewsIcon from "./assets/icons/quality.png";
+import returnsIcon from "./assets/icons/customer-service.png";
 import settingIcon from "./assets/icons/setting.png";
 import telegramSettingIcon from "./assets/icons/telegram-setting.png";
 import whatsappIcon from "./assets/icons/whatsapp.png";
@@ -33,7 +35,7 @@ import deliveredIcon from "./assets/icons/delivered.png";
 import collectedIcon from "./assets/icons/collected.png";
 import rejectedIcon from "./assets/icons/rejected.png";
 
-type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"ntfy"|"store"|"reviews";
+type Tab = "orders"|"products"|"customization"|"customers"|"stats"|"notifications"|"ntfy"|"store"|"reviews"|"returns";
 type OrderStatus = "pending"|"confirmed"|"on_the_way"|"delivered"|"collected"|"rejected";
 
 const deliverySteps = ["pending","confirmed","on_the_way","delivered"];
@@ -99,6 +101,7 @@ const navItems: { key: Tab; icon: string; label: string; group?: string }[] = [
   { key:"customization", icon:customizationIcon,   label:"صياغة حسب الطلب",         group:"main" },
   { key:"customers",     icon:customersIcon,       label:"العملاء",         group:"main" },
   { key:"reviews",       icon:reviewsIcon,         label:"التقييمات",       group:"main" },
+  { key:"returns",       icon:returnsIcon,         label:"طلبات الإرجاع",   group:"main" },
   { key:"notifications", icon:notificationsIcon,   label:"الإشعارات",       group:"main" },
   { key:"stats",         icon:statisticsIcon,      label:"الإحصائيات",      group:"main" },
   { key:"store",         icon:settingIcon,         label:"إعدادات المتجر",  group:"settings" },
@@ -137,6 +140,10 @@ export default function Admin() {
 
       const batch = writeBatch(db);
       batch.update(doc(db,"orders",id), {status});
+      // ✅ نسجّل وقت الاكتمال بالضبط — تحتاجه خدمة طلبات الإرجاع (نافذة 15 يوم من هذا التاريخ)
+      if (status === "delivered" || status === "collected") {
+        batch.update(doc(db,"orders",id), { completedAt: serverTimestamp() });
+      }
 
       // عند التأكيد: قلّل الكمية (الأدمن عنده صلاحية)
       if (status === "confirmed" && order && !order.stockDeducted) {
@@ -387,6 +394,7 @@ export default function Admin() {
           {tab==="customization" && <div className="animate-fadeIn"><CustomizationManager /></div>}
           {tab==="customers"     && <div className="animate-fadeIn"><Customers /></div>}
           {tab==="reviews"       && <div className="animate-fadeIn"><ReviewsManager /></div>}
+          {tab==="returns"       && <div className="animate-fadeIn"><ReturnRequestsManager /></div>}
           {tab==="notifications" && <div className="animate-fadeIn"><Notifications /></div>}
           {tab==="ntfy"          && <div className="animate-fadeIn"><NotificationSettings /></div>}
           {tab==="store"         && <div className="animate-fadeIn"><StoreSettings /></div>}

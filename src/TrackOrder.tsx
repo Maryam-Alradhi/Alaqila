@@ -4,6 +4,7 @@ import { doc, updateDoc, getDoc, collection, query, where, orderBy, getDocs, inc
 import { db } from "./firebase";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
+import ReturnRequestForm from "./ReturnRequestForm";
 import pendingIcon from "./assets/icons/pending.png";
 import confirmedIcon from "./assets/icons/confirmed.png";
 import onTheWayIcon from "./assets/icons/on_the_way.png";
@@ -476,6 +477,9 @@ function TrackOrder() {
                 <img src={encryptedIcon} alt="" style={{ width:"13px", height:"13px", objectFit:"contain", filter:"invert(1)" }} /> لا يمكن إلغاء الطلب بعد قبوله
               </div>
             )}
+
+            {/* ✅ الإبلاغ عن خلل / طلب إرجاع — بس لصاحب الطلب، خلال 15 يوم من الاستلام */}
+            {isDone && <ReturnRequestForm order={order} />}
 
           </div>
         )}
