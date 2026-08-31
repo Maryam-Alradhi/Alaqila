@@ -38,6 +38,9 @@ type OrderStatus = "pending"|"confirmed"|"on_the_way"|"delivered"|"collected"|"r
 
 const deliverySteps = ["pending","confirmed","on_the_way","delivered"];
 const pickupSteps   = ["pending","confirmed","collected"];
+// ✅ الطلبات النشطة تحتاج متابعة يومية، والمكتملة (سجل) نخليها بعيدة عن الواجهة الافتراضية عشان ما تصير مزدحمة
+const ACTIVE_STATUSES  = ["pending","confirmed","on_the_way"];
+const HISTORY_STATUSES = ["delivered","collected","rejected"];
 
 const statusLabels: Record<string,string> = {
   pending:"بانتظار المراجعة", confirmed:"مؤكد",
@@ -106,7 +109,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [tab,         setTab]         = useState<Tab>("orders");
   const [orders,      setOrders]      = useState<any[]>([]);
-  const [filter,      setFilter]      = useState("all");
+  const [filter,      setFilter]      = useState("active");
   const [orderSearch, setOrderSearch] = useState("");
   const [loading,     setLoading]     = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -193,6 +196,12 @@ export default function Admin() {
     } catch { showToast("فشل التحديث", "error"); }
   };
 
+  // ✅ الرفض عملية حساسة (ترجع الكمية وترسل إيميل للعميل) — نتأكد قبل ما ننفذها
+  const rejectOrder = (id: string) => {
+    if (!window.confirm("هل أنت متأكدة من رفض هذا الطلب؟ راح ترجع الكمية للمخزون ويوصل إيميل للعميل.")) return;
+    updateStatus(id, "rejected");
+  };
+
   const deleteOrder = async (id: string) => {
     if (!window.confirm("تأكيد الحذف؟")) return;
     try {
@@ -218,7 +227,12 @@ export default function Admin() {
   };
 
   const filtered = orders
-    .filter(o => filter==="all" ? true : o.status===filter)
+    .filter(o => {
+      if (filter==="all") return true;
+      if (filter==="active") return ACTIVE_STATUSES.includes(o.status);
+      if (filter==="history") return HISTORY_STATUSES.includes(o.status);
+      return o.status===filter;
+    })
     .filter(o => {
       if (!orderSearch.trim()) return true;
       const q = orderSearch.toLowerCase();
@@ -390,14 +404,22 @@ export default function Admin() {
               </div>
 
               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"16px" }}>
-                {["all","pending","confirmed","on_the_way","delivered","collected","rejected"].map(f=>(
-                  <button key={f} onClick={()=>setFilter(f)} className="btn-3d"
-                    style={{ padding:"5px 12px", borderRadius:"99px", border:"1px solid var(--border)", background:filter===f?"var(--gold)":"transparent", color:filter===f?"#000":"var(--text-muted)", cursor:"pointer", fontSize:"11px", fontWeight:filter===f?"700":"400", fontFamily:"inherit", transition:"var(--transition)", display:"inline-flex", alignItems:"center", gap:"5px" }}>
-                    {f!=="all" && <img src={statusIcons[f]} alt="" style={{ width:"13px", height:"13px", objectFit:"contain", filter:filter===f?"none":"invert(1)" }} />}
-                    {f==="all"?"الكل":statusLabels[f]}
-                    {f!=="all" && <span style={{ opacity:0.6 }}>({orders.filter(o=>o.status===f).length})</span>}
-                  </button>
-                ))}
+                {["active","pending","confirmed","on_the_way","history","delivered","collected","rejected","all"].map(f=>{
+                  const isGroup = f==="active" || f==="history" || f==="all";
+                  const count = f==="active" ? orders.filter(o=>ACTIVE_STATUSES.includes(o.status)).length
+                    : f==="history" ? orders.filter(o=>HISTORY_STATUSES.includes(o.status)).length
+                    : f==="all" ? orders.length
+                    : orders.filter(o=>o.status===f).length;
+                  const label = f==="active" ? "🔵 نشطة" : f==="history" ? "📁 السجل (مكتملة)" : f==="all" ? "الكل" : statusLabels[f];
+                  return (
+                    <button key={f} onClick={()=>setFilter(f)} className="btn-3d"
+                      style={{ padding:"5px 12px", borderRadius:"99px", border:"1px solid var(--border)", background:filter===f?"var(--gold)":"transparent", color:filter===f?"#000":"var(--text-muted)", cursor:"pointer", fontSize:"11px", fontWeight:filter===f?"700":"400", fontFamily:"inherit", transition:"var(--transition)", display:"inline-flex", alignItems:"center", gap:"5px" }}>
+                      {!isGroup && <img src={statusIcons[f]} alt="" style={{ width:"13px", height:"13px", objectFit:"contain", filter:filter===f?"none":"invert(1)" }} />}
+                      {label}
+                      <span style={{ opacity:0.6 }}>({count})</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {loading && (
@@ -501,7 +523,7 @@ export default function Admin() {
                       <div style={{ padding:"10px 18px", borderTop:"1px solid var(--border)", display:"flex", gap:"6px", flexWrap:"wrap" }}>
                         {order.status==="pending" && <>
                           <button onClick={()=>updateStatus(order.id,"confirmed")} className="btn-3d" style={ab("#22c55e")}>✅ قبول</button>
-                          <button onClick={()=>updateStatus(order.id,"rejected")}  className="btn-3d" style={ab("#ef4444")}>❌ رفض</button>
+                          <button onClick={()=>rejectOrder(order.id)}  className="btn-3d" style={ab("#ef4444")}>❌ رفض</button>
                         </>}
                         {order.status==="rejected" && (
                           <button onClick={()=>updateStatus(order.id,"pending")} className="btn-3d" style={ab("#f59e0b")}>↩️ استرجاع الطلب</button>
@@ -509,6 +531,10 @@ export default function Admin() {
                         {order.status==="confirmed"  && isDel  && <button onClick={()=>updateStatus(order.id,"on_the_way")} className="btn-3d" style={ab("#3b82f6")}>🚗 خرج للتوصيل</button>}
                         {order.status==="on_the_way"            && <button onClick={()=>updateStatus(order.id,"delivered")}  className="btn-3d" style={ab("#8b5cf6")}>📦 تم التوصيل</button>}
                         {order.status==="confirmed"  && !isDel  && <button onClick={()=>updateStatus(order.id,"collected")}  className="btn-3d" style={ab("#8b5cf6")}>🤝 تم الاستلام</button>}
+                        {/* ✅ لسا ما وصل الطلب فعلياً (مؤكد أو بالطريق) — نخلي فرصة نرفضه لو صار خطأ، قبل ما يوصل ويصير نهائي */}
+                        {(order.status==="confirmed" || order.status==="on_the_way") && (
+                          <button onClick={()=>rejectOrder(order.id)} className="btn-3d" style={ab("#ef4444")}>❌ رفض</button>
+                        )}
                         <a href={`https://wa.me/${customer.phone}`} target="_blank" rel="noreferrer" className="btn-3d"
                           style={{...ab("#25D366"),textDecoration:"none",display:"inline-flex",alignItems:"center",gap:"5px"}}>
                           <img src={whatsappIcon} alt="" style={{ width:"12px", height:"12px", objectFit:"contain", filter:"invert(1)" }} /> واتساب

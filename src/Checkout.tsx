@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { CartContext } from "./CartContext";
 import { setDoc, updateDoc, serverTimestamp, doc, getDoc, increment } from "firebase/firestore";
 import { db } from "./firebase";
@@ -92,6 +93,7 @@ export default function Checkout() {
   const [useBalance,  setUseBalance]  = useState(false);
   const [storeSettings, setStoreSettings] = useState<any>({ deliveryFee:"2", loyaltyPercent:"5", loyaltyEnabled:true });
   const [ntfyTopic, setNtfyTopic] = useState("");
+  const [successInfo, setSuccessInfo] = useState<{ orderNumber: string } | null>(null);
 
   // إيصال الدفع
   const [receiptFile,    setReceiptFile]    = useState<File|null>(null);
@@ -242,12 +244,41 @@ export default function Checkout() {
 
       clearCart();
       clearCoupon();
-      showToast(`تم إرسال طلبك! رقم الطلب: ${orderNumber} 🎉`,"success");
-      setTimeout(()=>navigate("/track/"+orderNumber),1500);
+      setSuccessInfo({ orderNumber });
     } catch(e) {
       console.error(e); showToast("حدث خطأ، حاول مرة أخرى 😢","error");
     } finally { setLoading(false); }
   };
+
+  // ✅ نافذة نجاح الطلب — تظهر فوق أي شي، حتى لو السلة صارت فاضية بعد الإرسال
+  if (successInfo) return createPortal(
+    <>
+      <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", backdropFilter:"blur(10px)", zIndex:500 }} />
+      <div style={{ position:"fixed", inset:0, zIndex:501, overflowY:"auto", padding:"40px 16px", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div className="animate-scaleIn card" style={{ width:"100%", maxWidth:"420px", padding:"32px 26px", direction:"rtl", textAlign:"center", border:"1px solid var(--gold-border)", boxShadow:"0 32px 80px rgba(0,0,0,0.8)" }}>
+          <div style={{ fontSize:"44px", marginBottom:"14px" }}>🎉</div>
+          <h2 className="font-display gold-shimmer" style={{ fontSize:"20px", fontWeight:"800", margin:"0 0 8px" }}>تم إرسال طلبك بنجاح!</h2>
+          <p style={{ color:"var(--text-muted)", fontSize:"13px", marginBottom:"18px" }}>
+            رقم طلبك: <span style={{ color:"var(--gold)", fontWeight:"700", fontFamily:"monospace" }}>#{successInfo.orderNumber}</span>
+          </p>
+          <div style={{ background:"rgba(212,175,55,0.06)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius)", padding:"14px 16px", marginBottom:"20px", textAlign:"right" }}>
+            <p style={{ color:"var(--text-dim)", fontSize:"12px", margin:0, lineHeight:1.8 }}>
+              📩 راح توصلك تحديثات حالة طلبك على بريدك الإلكتروني. لو ما شفتها بصندوق الوارد، تأكدي من مجلد <strong style={{ color:"var(--gold)" }}>السبام / البريد غير المرغوب فيه</strong>.
+            </p>
+          </div>
+          <div style={{ display:"flex", gap:"10px" }}>
+            <button onClick={()=>navigate("/track/"+successInfo.orderNumber)} className="btn-gold btn-3d" style={{ flex:1, padding:"12px" }}>
+              عرض تفاصيل طلبي
+            </button>
+            <button onClick={()=>navigate("/shop")} className="btn-ghost btn-3d" style={{ flex:1, padding:"12px" }}>
+              متابعة التسوق
+            </button>
+          </div>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
 
   if (cart.length===0) return (
     <div style={{ textAlign:"center", marginTop:"80px", padding:"20px" }}>
