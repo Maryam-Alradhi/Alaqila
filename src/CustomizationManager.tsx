@@ -4,6 +4,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
 import { db } from "./firebase";
 import { useToast } from "./Toast";
 import { type CustomField } from "./ManageProducts";
+import { getCoverMedia } from "./media";
 
 // ✅ التخصيص يقتصر على الأنواع اللي فيها خدمة تخصيص فعلية
 const CATEGORIES = [
@@ -41,6 +42,7 @@ const emptyForm = {
   name: "", price: "", category: "rings", description: "",
   images: [""] as string[],
   video: "",
+  coverType: "image" as "image" | "video", // ✅ لو فيه صورة وفيديو مع بعض، تحددين انتِ أيّهم يكون الغلاف
   customFields: PRESET_FIELDS.rings.map(f => ({ ...f })),
 };
 
@@ -93,6 +95,7 @@ export default function CustomizationManager() {
       description: p.description || "",
       images: Array.isArray(p.images) && p.images.length ? [...p.images] : (p.image ? [p.image] : [""]),
       video: p.video || "",
+      coverType: p.coverType === "video" ? "video" : "image",
       customFields: Array.isArray(p.customFields) ? p.customFields.map((f: any) => ({ label: f.label || "", required: !!f.required })) : [],
     });
     setEditId(p.id);
@@ -118,6 +121,7 @@ export default function CustomizationManager() {
       image: images[0] || "",
       images,
       video: form.video.trim(),
+      coverType: form.coverType === "video" ? "video" : "image",
       customizable: true,
       customFields: form.customFields.filter(f => f.label.trim()).map(f => ({ label: f.label.trim(), required: !!f.required })),
     };
@@ -172,13 +176,13 @@ export default function CustomizationManager() {
             onMouseEnter={e => e.currentTarget.style.borderColor="var(--gold)"}
             onMouseLeave={e => e.currentTarget.style.borderColor="var(--gold-border)"}>
             <div style={{ position:"relative" }}>
-              {p.image ? (
-                <img src={p.image} alt={p.name} loading="lazy" style={{ width:"100%", height:"140px", objectFit:"cover" }} />
-              ) : p.video ? (
-                <video src={p.video} autoPlay muted loop playsInline preload="metadata" style={{ width:"100%", height:"140px", objectFit:"cover" }} />
-              ) : (
-                <div style={{ width:"100%", height:"140px", background:"#1a1a2a", display:"flex", alignItems:"center", justifyContent:"center", color:"#444" }}>لا صورة</div>
-              )}
+              {(() => {
+                const cover = getCoverMedia(p);
+                if (!cover) return <div style={{ width:"100%", height:"140px", background:"#1a1a2a", display:"flex", alignItems:"center", justifyContent:"center", color:"#444" }}>لا صورة</div>;
+                return cover.type === "video"
+                  ? <video src={cover.src} autoPlay muted loop playsInline preload="metadata" style={{ width:"100%", height:"140px", objectFit:"cover" }} />
+                  : <img src={cover.src} alt={p.name} loading="lazy" style={{ width:"100%", height:"140px", objectFit:"cover" }} />;
+              })()}
               {Array.isArray(p.images) && p.images.length > 1 && (
                 <div style={{ position:"absolute", top:"6px", left:"6px", background:"rgba(0,0,0,0.7)", color:"white", padding:"2px 8px", borderRadius:"6px", fontSize:"10px", fontWeight:"700" }}>
                   🖼️ {p.images.length} صور
@@ -287,12 +291,30 @@ export default function CustomizationManager() {
                 <div>
                   <label style={lbl}>رابط فيديو (اختياري — لملفات mp4، لا تحطه في خانات الصور)</label>
                   <input value={form.video} onChange={e => setForm(f => ({ ...f, video: e.target.value }))} placeholder="https://... (mp4)" className="inp" dir="ltr" />
-                  {form.video.trim() && (
+                  {form.video.trim() && !form.images.some(s => s.trim()) && (
                     <p style={{ color:"var(--text-muted)", fontSize:"11px", marginTop:"4px" }}>
-                      ملاحظة: إذا حطيت فيديو، بيظهر هو بدل معرض الصور في صفحة المنتج.
+                      ملاحظة: بما إنه ما فيه صور، الفيديو بيظهر بصفحة المنتج.
                     </p>
                   )}
                 </div>
+
+                {/* ✅ لو فيها صورة وفيديو مع بعض، تختارين انتِ أيّهم يكون الغلاف */}
+                {form.images.some(s => s.trim()) && form.video.trim() && (
+                  <div>
+                    <label style={lbl}>الغلاف (أول شي يشوفه العميل)</label>
+                    <div style={{ display:"flex", gap:"8px", marginTop:"6px" }}>
+                      {[
+                        { value:"image", label:"🖼️ الصورة" },
+                        { value:"video", label:"🎬 الفيديو" },
+                      ].map(o => (
+                        <button key={o.value} onClick={() => setForm(f => ({ ...f, coverType: o.value as any }))} className="btn-3d"
+                          style={{ flex:1, padding:"9px 8px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.coverType===o.value?"var(--gold)":"var(--border)"}`, background:form.coverType===o.value?"var(--gold-dim)":"transparent", color:form.coverType===o.value?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Custom fields — auto-filled by type, editable/extendable */}
                 <div>

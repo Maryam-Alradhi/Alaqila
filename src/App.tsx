@@ -25,6 +25,7 @@ import Admin from "./Admin";
 import AdminLogin from "./AdminLogin";
 import TrackOrder from "./TrackOrder";
 import About from "./About";
+import Help from "./Help";
 import NotFound from "./NotFound";
 import Footer from "./Footer";
 import Login from "./Login";
@@ -32,6 +33,7 @@ import Profile from "./Profile";
 import Orders from "./Orders";
 import { useAuth } from "./AuthContext";
 import { getActiveDiscount, getDiscountedPrice } from "./pricing";
+import { getCoverMedia } from "./media";
 
 // ✅ Module-level products cache — survives re-renders, cleared on page reload
 let _productsCache: any[] | null = null;
@@ -73,6 +75,13 @@ function App() {
   const { user, profile, isAdmin, loading: authLoading, logout } = useAuth();
   const navigate  = useNavigate();
   const location  = useLocation();
+
+  // ✅ التنقّل بين الصفحات بالموقع (SPA) ما يرجّع السكرول لفوق تلقائياً زي الصفحات العادية —
+  // نسوّيها يدوياً كل ما يتغيّر المسار، وإلا أي رابط تضغطينه من الفوتر (بالأسفل) يوديك لصفحة
+  // جديدة وانتِ لسا بالأسفل بدل ما تشوفين بداية الصفحة
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     // ✅ Skip fetch if already cached
@@ -397,12 +406,14 @@ function App() {
                           {product.gender === "female" ? " نسائي" : product.gender === "male" ? " رجالي" : "👶 أطفال"}
                         </div>
                       )}
-                      {product.video ? (
-                        <video src={product.video} autoPlay loop muted playsInline preload="metadata" style={{ width: "100%", height: "200px", objectFit: "cover", opacity: soldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
-                      ) : (
+                      {(() => {
+                        const cover = getCoverMedia(product);
+                        if (cover?.type === "video") {
+                          return <video src={cover.src} autoPlay loop muted playsInline preload="metadata" style={{ width: "100%", height: "200px", objectFit: "cover", opacity: soldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />;
+                        }
                         // ✅ Fix: lazy load images so only visible images load
-                        <img src={product.image} loading="lazy" decoding="async" style={{ width: "100%", height: "200px", objectFit: "cover", transition: "transform 0.4s ease, opacity 0.3s ease", opacity: soldOut ? 0.4 : 1 }} alt={product.name} />
-                      )}
+                        return <img src={cover?.src || product.image} loading="lazy" decoding="async" style={{ width: "100%", height: "200px", objectFit: "cover", transition: "transform 0.4s ease, opacity 0.3s ease", opacity: soldOut ? 0.4 : 1 }} alt={product.name} />;
+                      })()}
                     </div>
                     <div style={{ padding: "13px" }}>
                       <h3 style={{ color: "var(--gold)", margin: "0 0 4px", fontSize: "14px", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</h3>
@@ -433,6 +444,7 @@ function App() {
         <Route path="/track"               element={<TrackOrder />} />
         <Route path="/track/:orderNumber"  element={<TrackOrder />} />
         <Route path="/about"               element={<About />} />
+        <Route path="/help"                element={<Help />} />
         <Route path="/profile"             element={<Profile />} />
         <Route path="/orders"              element={<Orders />} />
         <Route path="/manage-store-aqeela" element={<div/>} />

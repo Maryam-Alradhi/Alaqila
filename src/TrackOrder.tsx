@@ -4,7 +4,6 @@ import { doc, updateDoc, getDoc, collection, query, where, orderBy, getDocs, inc
 import { db } from "./firebase";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
-import ReturnRequestForm from "./ReturnRequestForm";
 import pendingIcon from "./assets/icons/pending.png";
 import confirmedIcon from "./assets/icons/confirmed.png";
 import onTheWayIcon from "./assets/icons/on_the_way.png";
@@ -31,6 +30,8 @@ const statusColors: Record<string,string> = {
   pending:"#f59e0b", confirmed:"#22c55e", on_the_way:"#3b82f6",
   delivered:"#8b5cf6", collected:"#8b5cf6", rejected:"#ef4444",
 };
+const returnStatusLabels: Record<string,string> = { pending:"⏳ قيد المراجعة", approved:"✅ تمت الموافقة", rejected:"❌ مرفوض" };
+const returnStatusColors: Record<string,string> = { pending:"#f59e0b", approved:"#22c55e", rejected:"#ef4444" };
 
 const trustFeatures = [
   { icon:customerServiceIcon, title:"دعم على مدار الساعة", desc:"فريق الدعم جاهز لمساعدتك 24/7" },
@@ -51,6 +52,9 @@ function TrackOrder() {
   const [showInvoice, setShowInvoice] = useState(false);
   const [myOrders,    setMyOrders]    = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [listTab, setListTab] = useState<"orders" | "returns">("orders");
+  const [myReturns, setMyReturns] = useState<any[]>([]);
+  const [returnsLoading, setReturnsLoading] = useState(true);
 
   const fetchOrder = async (num: string) => {
     if (!num.trim()) return;
@@ -87,6 +91,15 @@ function TrackOrder() {
       } catch { setMyOrders([]); }
       finally { setOrdersLoading(false); }
     })();
+    (async () => {
+      setReturnsLoading(true);
+      try {
+        const q = query(collection(db,"returnRequests"), where("userId","==",user.uid));
+        const snap = await getDocs(q);
+        setMyReturns(snap.docs.map(d => ({ id:d.id, ...d.data() })));
+      } catch { setMyReturns([]); }
+      finally { setReturnsLoading(false); }
+    })();
   }, [orderNumber, user, authLoading]);
 
   const handleCancel = async () => {
@@ -119,6 +132,9 @@ function TrackOrder() {
   // ✅ ما نبين زر الإلغاء إلا لصاحب الطلب الفعلي (أو طلب زائر قديم بلا حساب) — يطابق قاعدة الحماية بالسيرفر
   const canCancel = order?.status === "pending" && (!order.userId || order.userId === user?.uid);
   const showList = !orderNumber;
+  // ✅ الطلبات اللي وصلت فعلاً (تم التوصيل/الاستلام) صارت تُعرض بصفحة "طلباتي" بدل هنا —
+  // هذي الصفحة صارت خاصة بمتابعة الطلبات اللي لسا ما وصلت
+  const activeOrders = myOrders.filter(o => o.status !== "delivered" && o.status !== "collected");
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", direction:"rtl" }}>
@@ -160,6 +176,21 @@ function TrackOrder() {
       {/* My orders list — يظهر بدل البحث اليدوي، دايماً بعد تسجيل الدخول */}
       {showList && (
         <div style={{ maxWidth:"680px", margin:"0 auto", padding:"40px 16px 70px" }}>
+
+          {/* تبويبات: الطلبات الحالية / طلبات الإرجاع */}
+          <div style={{ display:"flex", gap:"8px", marginBottom:"20px" }}>
+            {([
+              { key:"orders" as const,  label:"📦 الطلبات الحالية" },
+              { key:"returns" as const, label:"🔁 طلبات الإرجاع" },
+            ]).map(t => (
+              <button key={t.key} onClick={() => setListTab(t.key)} className="btn-3d"
+                style={{ flex:1, padding:"11px 8px", borderRadius:"var(--radius)", border:`2px solid ${listTab===t.key?"var(--gold)":"var(--border)"}`, background:listTab===t.key?"var(--gold-dim)":"transparent", color:listTab===t.key?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontWeight:"700", fontSize:"13px", fontFamily:"inherit" }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {listTab === "orders" && (<>
           {(authLoading || ordersLoading) && (
             <div style={{ textAlign:"center", padding:"40px" }}>
               <div className="animate-spin" style={{ width:"36px", height:"36px", border:"3px solid var(--border)", borderTop:"3px solid var(--gold)", borderRadius:"50%", margin:"0 auto 12px" }} />
@@ -167,18 +198,18 @@ function TrackOrder() {
             </div>
           )}
 
-          {!authLoading && !ordersLoading && myOrders.length === 0 && (
+          {!authLoading && !ordersLoading && activeOrders.length === 0 && (
             <div className="card animate-slideUp" style={{ textAlign:"center", padding:"46px 20px" }}>
               <div style={{ fontSize:"48px", marginBottom:"12px" }}>📭</div>
-              <p style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700" }}>ما عندك طلبات بعد</p>
-              <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"6px", marginBottom:"20px" }}>أول ما تسوّين طلب، بيبين تلقائياً</p>
+              <p style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700" }}>ما عندك طلبات حالية</p>
+              <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"6px", marginBottom:"20px" }}>الطلبات اللي وصلتك تلقينها بصفحة "طلباتي"</p>
               <button onClick={() => navigate("/shop")} className="btn-gold btn-3d">تصفح المتجر ✨</button>
             </div>
           )}
 
-          {!authLoading && !ordersLoading && myOrders.length > 0 && (
+          {!authLoading && !ordersLoading && activeOrders.length > 0 && (
             <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-              {myOrders.map((o, i) => {
+              {activeOrders.map((o, i) => {
                 const c = statusColors[o.status] || "#888";
                 const oSteps = o.deliveryType === "pickup" ? pickupSteps : deliverySteps;
                 const label = oSteps.find(s => s.key === o.status)?.label || "مرفوض";
@@ -203,6 +234,43 @@ function TrackOrder() {
               })}
             </div>
           )}
+          </>)}
+
+          {listTab === "returns" && (<>
+          {(authLoading || returnsLoading) && (
+            <div style={{ textAlign:"center", padding:"40px" }}>
+              <div className="animate-spin" style={{ width:"36px", height:"36px", border:"3px solid var(--border)", borderTop:"3px solid var(--gold)", borderRadius:"50%", margin:"0 auto 12px" }} />
+              <p style={{ color:"var(--text-muted)" }}>جاري التحميل...</p>
+            </div>
+          )}
+
+          {!authLoading && !returnsLoading && myReturns.length === 0 && (
+            <div className="card animate-slideUp" style={{ textAlign:"center", padding:"46px 20px" }}>
+              <div style={{ fontSize:"48px", marginBottom:"12px" }}>🔁</div>
+              <p style={{ color:"var(--text)", fontSize:"16px", fontWeight:"700" }}>ما عندك طلبات إرجاع</p>
+              <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"6px" }}>تقدرين تطلبين إرجاع من صفحة "طلباتي" لأي طلب وصلك</p>
+            </div>
+          )}
+
+          {!authLoading && !returnsLoading && myReturns.length > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+              {myReturns.map(r => {
+                const c = returnStatusColors[r.status] || "#888";
+                return (
+                  <div key={r.id} className="card animate-slideUp" style={{ padding:"18px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"10px" }}>
+                      <p style={{ color:"var(--gold)", fontWeight:"800", fontSize:"15px", margin:0 }}>#{r.orderNumber}</p>
+                      <span style={{ background:c+"22", color:c, padding:"5px 12px", borderRadius:"20px", fontSize:"12px", border:`1px solid ${c}44`, fontWeight:"700" }}>
+                        {returnStatusLabels[r.status] || r.status}
+                      </span>
+                    </div>
+                    {r.reason && <p style={{ color:"var(--text-muted)", fontSize:"13px", marginTop:"8px", marginBottom:0 }}>{r.reason}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          </>)}
 
           {!authLoading && !ordersLoading && (
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:"18px", marginTop:"36px" }}>
@@ -478,8 +546,12 @@ function TrackOrder() {
               </div>
             )}
 
-            {/* ✅ الإبلاغ عن خلل / طلب إرجاع — بس لصاحب الطلب، خلال 15 يوم من الاستلام */}
-            {isDone && <ReturnRequestForm order={order} />}
+            {/* ✅ الطلب المكتمل (وصل/استُلم) — طلب الإرجاع صار يُدار من صفحة "طلباتي" بدل هنا */}
+            {isDone && (
+              <div style={{ background:"rgba(212,175,55,0.06)", border:"1px solid var(--gold-border)", borderRadius:"var(--radius-sm)", padding:"10px 14px", color:"var(--gold)", fontSize:"12px", textAlign:"center" }}>
+                هذا الطلب وصلك ✅ — لو فيه خلل أو تبين ترجعينه، روحي لصفحة <span onClick={()=>navigate("/orders")} style={{ textDecoration:"underline", cursor:"pointer", fontWeight:"700" }}>طلباتي</span>
+              </div>
+            )}
 
           </div>
         )}

@@ -73,11 +73,12 @@ function Product() {
     ? product.images
     : [product.image].filter(Boolean);
 
-  // ✅ فيديو + كل الصور بمعرض واحد قابل للتنقل — الفيديو أول عنصر إذا موجود
-  const mediaItems: { type: "video" | "image"; src: string }[] = [
-    ...(product.video ? [{ type: "video" as const, src: product.video }] : []),
-    ...galleryImages.map(src => ({ type: "image" as const, src })),
-  ];
+  // ✅ فيديو + كل الصور بمعرض واحد قابل للتنقل — الغلاف المختار (coverType) يطلع أول عنصر
+  const videoItem = product.video ? { type: "video" as const, src: product.video } : null;
+  const imageItems = galleryImages.map(src => ({ type: "image" as const, src }));
+  const mediaItems: { type: "video" | "image"; src: string }[] = videoItem
+    ? (product.coverType === "video" ? [videoItem, ...imageItems] : [...imageItems, videoItem])
+    : imageItems;
   const activeMedia = mediaItems[Math.min(activeImage, mediaItems.length - 1)];
 
   const goToMedia = (delta: number) => {

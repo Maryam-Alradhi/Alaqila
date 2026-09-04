@@ -7,7 +7,7 @@ import { db } from "./firebase";
 import { useEffect } from "react";
 
 export default function Profile() {
-  const { user, profile, updateUserProfile, logout } = useAuth();
+  const { user, profile, updateUserProfile, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -20,9 +20,12 @@ export default function Profile() {
   const [txLoading,    setTxLoading]    = useState(false);
 
   useEffect(() => {
+    // ✅ ننتظر فايربيس يتأكد من حالة تسجيل الدخول أول — وإلا أي تحديث صفحة يطردك لتسجيل الدخول
+    // بالخطأ لأن "user" يكون فاضي لحظياً قبل ما فايربيس يرجع الجواب
+    if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     if (profile) { setName(profile.name||""); setPhone(profile.phone||""); setAddress(profile.address||""); }
-  }, [profile]);
+  }, [profile, user, authLoading]);
 
   useEffect(() => {
     if (tab !== "balance" || !user) return;

@@ -7,6 +7,7 @@ import {
 import { db } from "./firebase";
 import { useToast } from "./Toast";
 import { getActiveDiscount, getDiscountedPrice } from "./pricing";
+import { getCoverMedia } from "./media";
 
 const CATEGORIES = [
   { value: "rings",    label: "💍 خواتم" },
@@ -22,6 +23,7 @@ export type NecklaceType = { name: string; price: string };
 const emptyForm = {
   name: "", price: "", category: "rings", description: "",
   images: [""] as string[], video: "",
+  coverType: "image" as "image" | "video", // ✅ لو فيه صورة وفيديو مع بعض، تحددين انتِ أيّهم يكون الغلاف
   quantity: "0",
   isNew: false,
   isFeatured: false,
@@ -90,6 +92,7 @@ export default function ManageProducts() {
       description: p.description || "",
       images: Array.isArray(p.images) && p.images.length ? [...p.images] : (p.image ? [p.image] : [""]),
       video: p.video || "",
+      coverType: p.coverType === "video" ? "video" : "image",
       quantity: String(legacySizesTotal ?? p.quantity ?? "0"),
       isNew: !!p.isNew,
       isFeatured: !!p.isFeatured,
@@ -161,6 +164,8 @@ export default function ManageProducts() {
       image: images[0] || "",
       images,
       video: form.video.trim(),
+      // ✅ لو فيها صورة وفيديو مع بعض، نحفظ اختيارك؛ لو وحد بس موجود ما يحتاج اختيار
+      coverType: form.coverType === "video" ? "video" : "image",
       isNew: form.isNew,
       isFeatured: form.isFeatured,
       // ✅ نحصر الخصم بين 0 و99% دايماً — خصم 100% أو أكثر يخلي السعر صفر أو بالسالب
@@ -279,13 +284,13 @@ export default function ManageProducts() {
               onMouseEnter={e => e.currentTarget.style.borderColor="var(--gold-border)"}
               onMouseLeave={e => e.currentTarget.style.borderColor="var(--border)"}>
               <div style={{ position:"relative" }}>
-                {p.video ? (
-                  <video src={p.video} autoPlay muted loop playsInline preload="metadata" style={{ width:"100%", height:"150px", objectFit:"cover" }} />
-                ) : p.image ? (
-                  <img src={p.image} alt={p.name} loading="lazy" style={{ width:"100%", height:"150px", objectFit:"cover" }} />
-                ) : (
-                  <div style={{ width:"100%", height:"150px", background:"#1a1a2a", display:"flex", alignItems:"center", justifyContent:"center", color:"#444" }}>لا صورة</div>
-                )}
+                {(() => {
+                  const cover = getCoverMedia(p);
+                  if (!cover) return <div style={{ width:"100%", height:"150px", background:"#1a1a2a", display:"flex", alignItems:"center", justifyContent:"center", color:"#444" }}>لا صورة</div>;
+                  return cover.type === "video"
+                    ? <video src={cover.src} autoPlay muted loop playsInline preload="metadata" style={{ width:"100%", height:"150px", objectFit:"cover" }} />
+                    : <img src={cover.src} alt={p.name} loading="lazy" style={{ width:"100%", height:"150px", objectFit:"cover" }} />;
+                })()}
                 <div style={{ position:"absolute", top:"6px", left:"6px", display:"flex", flexDirection:"column", gap:"3px" }}>
                   {soldOut  && <span style={{ background:"rgba(239,68,68,0.9)",  color:"white",  padding:"2px 7px", borderRadius:"5px", fontSize:"9px", fontWeight:"800" }}>نفذ</span>}
                   {lowStock && <span style={{ background:"rgba(245,158,11,0.9)", color:"#000",   padding:"2px 7px", borderRadius:"5px", fontSize:"9px", fontWeight:"800" }}>⚠️ {stock}</span>}
@@ -457,6 +462,24 @@ export default function ManageProducts() {
                   <label style={lbl}>رابط الفيديو (اختياري)</label>
                   <input value={form.video} onChange={e => setForm(f => ({ ...f, video: e.target.value }))} placeholder="https://... (mp4)" className="inp" dir="ltr" />
                 </div>
+
+                {/* ✅ لو فيها صورة وفيديو مع بعض، تختارين انتِ أيّهم يكون الغلاف */}
+                {form.images.some(s => s.trim()) && form.video.trim() && (
+                  <div>
+                    <label style={lbl}>الغلاف (أول شي يشوفه العميل)</label>
+                    <div style={{ display:"flex", gap:"8px", marginTop:"6px" }}>
+                      {[
+                        { value:"image", label:"🖼️ الصورة" },
+                        { value:"video", label:"🎬 الفيديو" },
+                      ].map(o => (
+                        <button key={o.value} onClick={() => setForm(f => ({ ...f, coverType: o.value as any }))} className="btn-3d"
+                          style={{ flex:1, padding:"9px 8px", borderRadius:"var(--radius-sm)", border:`2px solid ${form.coverType===o.value?"var(--gold)":"var(--border)"}`, background:form.coverType===o.value?"var(--gold-dim)":"transparent", color:form.coverType===o.value?"var(--gold)":"var(--text-muted)", cursor:"pointer", fontSize:"12px", fontWeight:"700", fontFamily:"inherit", transition:"var(--transition)" }}>
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Badges */}
                 <div>

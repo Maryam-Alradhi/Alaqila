@@ -46,5 +46,9 @@ export default defineConfig({
     target: 'esnext',
     sourcemap: false,
   },
-  server: { hmr: { overlay: true } },
+  server: {
+    port: process.env.PORT ? Number(process.env.PORT) : 5173,
+    strictPort: false,
+    hmr: { overlay: true },
+  },
 });

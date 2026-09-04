@@ -5,6 +5,7 @@ import { db } from "./firebase";
 import { useAuth } from "./AuthContext";
 import { CartContext } from "./CartContext";
 import { useToast } from "./Toast";
+import ReturnRequestForm from "./ReturnRequestForm";
 
 const statusColors: Record<string,string> = {
   pending:"#f59e0b", confirmed:"#22c55e", on_the_way:"#3b82f6",
@@ -17,7 +18,7 @@ const statusLabels: Record<string,string> = {
 };
 
 export default function Orders() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
   const { showToast } = useToast();
@@ -38,6 +39,9 @@ export default function Orders() {
   };
 
   useEffect(() => {
+    // ✅ ننتظر فايربيس يتأكد من حالة تسجيل الدخول أول — وإلا أي تحديث صفحة يطردك لتسجيل الدخول
+    // بالخطأ لأن "user" يكون فاضي لحظياً قبل ما فايربيس يرجع الجواب
+    if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     (async () => {
       try {
@@ -51,7 +55,11 @@ export default function Orders() {
       } catch { setOrders([]); }
       finally { setLoading(false); }
     })();
-  }, [user]);
+  }, [user, authLoading]);
+
+  // ✅ "طلباتي" صارت خاصة بالطلبات المكتملة فعلاً (وصلت أو استُلمت) — من هنا يصير طلب الإرجاع.
+  // الطلبات اللي لسا ما وصلت (قيد الانتظار/مؤكدة/بالطريق) أو انرفضت تبقى بصفحة "تتبع الطلب"
+  const completedOrders = orders.filter(o => o.status === "delivered" || o.status === "collected");
 
   if (loading) return (
     <div style={{ minHeight:"60vh", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -66,23 +74,27 @@ export default function Orders() {
     <div style={{ minHeight:"100vh", background:"var(--bg)", padding:"32px 16px", direction:"rtl" }}>
       <div style={{ maxWidth:"680px", margin:"0 auto" }}>
 
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"24px", flexWrap:"wrap", gap:"10px" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"6px", flexWrap:"wrap", gap:"10px" }}>
           <h1 className="font-display" style={{ color:"var(--gold)", fontSize:"22px", fontWeight:"800" }}>📦 طلباتي</h1>
           <button onClick={() => navigate("/shop")} className="btn-ghost" style={{ fontSize:"13px", padding:"8px 16px" }}>
             🛍️ تسوق مجدداً
           </button>
         </div>
+        <p style={{ color:"var(--text-muted)", fontSize:"12px", marginBottom:"18px" }}>
+          الطلبات المستلمة — من هنا يمكنك إعادة الطلب مرة أخرى، أو الإبلاغ عن مشكلة وطلب استرجاع. أما الطلبات قيد التوصيل، فيمكنك متابعتها عبر صفحة  .
+          <span onClick={()=>navigate("/track")} style={{ color:"var(--gold)", cursor:"pointer", textDecoration:"underline" }}>تتبع الطلب</span>.
+        </p>
 
-        {orders.length === 0 ? (
+        {completedOrders.length === 0 ? (
           <div className="card animate-slideUp" style={{ textAlign:"center", padding:"60px 20px" }}>
             <div style={{ fontSize:"56px", marginBottom:"16px" }}>📭</div>
-            <h3 style={{ color:"var(--text)", marginBottom:"8px" }}>لا توجد طلبات بعد</h3>
-            <p style={{ color:"var(--text-muted)", marginBottom:"24px", fontSize:"14px" }}>ابدأ تسوقك الآن واستمتع بأفخم المجوهرات</p>
+            <h3 style={{ color:"var(--text)", marginBottom:"8px" }}>ما عندك طلبات وصلت بعد</h3>
+            <p style={{ color:"var(--text-muted)", marginBottom:"24px", fontSize:"14px" }}>أول ما يوصلك طلب، بيبين هنا</p>
             <button onClick={() => navigate("/shop")} className="btn-gold">تصفح المتجر ✨</button>
           </div>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-            {orders.map((order, i) => {
+            {completedOrders.map((order, i) => {
               const color = statusColors[order.status] || "#888";
               const isOpen = expanded === order.id;
               return (
@@ -146,6 +158,9 @@ export default function Orders() {
                         <span style={{ color:"var(--text)", fontWeight:"700", fontSize:"15px" }}>
                           {(order.total||0).toFixed(3)} BD
                         </span>
+                      </div>
+                      <div style={{ marginTop:"12px" }}>
+                        <ReturnRequestForm order={order} />
                       </div>
                     </div>
                   )}

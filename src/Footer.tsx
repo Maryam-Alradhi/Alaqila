@@ -44,6 +44,7 @@ export default function Footer() {
               { label: "المتجر", path: "/shop" },
               { label: "عن العقيلة", path: "/about" },
               { label: "تتبع طلب", path: "/track" },
+              { label: "المساعدة", path: "/help" },
             ].map(({ label, path }) => (
               <div
                 key={path}
