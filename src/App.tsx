@@ -380,26 +380,30 @@ function App() {
                 return (
                   <div key={product.id} onClick={() => navigate(`/product/${product.id}`)}
                     className="product-card animate-slideUp"
-                    style={{ animationDelay: `${i * 0.04}s`, position: "relative" }}>
-                    <button onClick={e => { e.stopPropagation(); toggleWishlist(product.id); }} className="btn-3d"
-                      style={{ position: "absolute", top: "8px", right: "8px", zIndex: 2, width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.15)", color: isWishlisted(product.id) ? "#ef4444" : "white", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
-                      {isWishlisted(product.id) ? "♥" : "♡"}
-                    </button>
-                    {soldOut && <div className="badge-overlay badge-red">Sold Out</div>}
-                    {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
-                    {product.isNew && <div className="badge-overlay badge-green badge-right" style={{ top: "40px" }}>جديد ✨</div>}
-                    {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة حسب الطلب</div>}
-                    {["female","male","kids"].includes(product.gender) && (
-                      <div className="badge-overlay" style={{ top: "auto", bottom: "8px", left: "8px", right: "auto", background: "rgba(0,0,0,0.7)", color: "white" }}>
-                        {product.gender === "female" ? " نسائي" : product.gender === "male" ? " رجالي" : "👶 أطفال"}
-                      </div>
-                    )}
-                    {product.video ? (
-                      <video src={product.video} autoPlay loop muted playsInline style={{ width: "100%", height: "200px", objectFit: "cover", opacity: soldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
-                    ) : (
-                      // ✅ Fix: lazy load images so only visible images load
-                      <img src={product.image} loading="lazy" decoding="async" style={{ width: "100%", height: "200px", objectFit: "cover", transition: "transform 0.4s ease, opacity 0.3s ease", opacity: soldOut ? 0.4 : 1 }} alt={product.name} />
-                    )}
+                    style={{ animationDelay: `${i * 0.04}s` }}>
+                    {/* ✅ كل البادجات (فوق وتحت) لازم تكون بحاوية بحدود الصورة بس، وإلا "bottom" يتمدد
+                        لحدود الكارد كامل ويطلع فوق السعر (كان هذا سبب اختفاء السعر) */}
+                    <div style={{ position: "relative" }}>
+                      <button onClick={e => { e.stopPropagation(); toggleWishlist(product.id); }} className="btn-3d"
+                        style={{ position: "absolute", top: "8px", right: "8px", zIndex: 2, width: "28px", height: "28px", borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.15)", color: isWishlisted(product.id) ? "#ef4444" : "white", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+                        {isWishlisted(product.id) ? "♥" : "♡"}
+                      </button>
+                      {soldOut && <div className="badge-overlay badge-red">Sold Out</div>}
+                      {lowStock && !soldOut && <div className="badge-overlay badge-amber">⚠️ باقي {stockNum}</div>}
+                      {product.isNew && <div className="badge-overlay badge-green badge-right" style={{ top: "40px" }}>جديد ✨</div>}
+                      {product.customizable && <div className="badge-overlay" style={{ top: "auto", bottom: "8px", right: "8px", left: "auto", background: "rgba(184,150,46,0.92)", color: "#000" }}>🎨 صياغة حسب الطلب</div>}
+                      {["female","male","kids"].includes(product.gender) && (
+                        <div className="badge-overlay" style={{ top: "auto", bottom: "8px", left: "8px", right: "auto", background: "rgba(0,0,0,0.7)", color: "white" }}>
+                          {product.gender === "female" ? " نسائي" : product.gender === "male" ? " رجالي" : "👶 أطفال"}
+                        </div>
+                      )}
+                      {product.video ? (
+                        <video src={product.video} autoPlay loop muted playsInline preload="metadata" style={{ width: "100%", height: "200px", objectFit: "cover", opacity: soldOut ? 0.4 : 1, transition: "opacity 0.3s ease" }} />
+                      ) : (
+                        // ✅ Fix: lazy load images so only visible images load
+                        <img src={product.image} loading="lazy" decoding="async" style={{ width: "100%", height: "200px", objectFit: "cover", transition: "transform 0.4s ease, opacity 0.3s ease", opacity: soldOut ? 0.4 : 1 }} alt={product.name} />
+                      )}
+                    </div>
                     <div style={{ padding: "13px" }}>
                       <h3 style={{ color: "var(--gold)", margin: "0 0 4px", fontSize: "14px", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{product.name}</h3>
                       <p style={{ color: "var(--text-dim)", margin: 0, fontSize: "13px", fontWeight: "600" }}>

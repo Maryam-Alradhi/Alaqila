@@ -174,6 +174,8 @@ export default function CustomizationManager() {
             <div style={{ position:"relative" }}>
               {p.image ? (
                 <img src={p.image} alt={p.name} loading="lazy" style={{ width:"100%", height:"140px", objectFit:"cover" }} />
+              ) : p.video ? (
+                <video src={p.video} autoPlay muted loop playsInline preload="metadata" style={{ width:"100%", height:"140px", objectFit:"cover" }} />
               ) : (
                 <div style={{ width:"100%", height:"140px", background:"#1a1a2a", display:"flex", alignItems:"center", justifyContent:"center", color:"#444" }}>لا صورة</div>
               )}

@@ -280,7 +280,7 @@ export default function ManageProducts() {
               onMouseLeave={e => e.currentTarget.style.borderColor="var(--border)"}>
               <div style={{ position:"relative" }}>
                 {p.video ? (
-                  <video src={p.video} muted loop style={{ width:"100%", height:"150px", objectFit:"cover" }} />
+                  <video src={p.video} autoPlay muted loop playsInline preload="metadata" style={{ width:"100%", height:"150px", objectFit:"cover" }} />
                 ) : p.image ? (
                   <img src={p.image} alt={p.name} loading="lazy" style={{ width:"100%", height:"150px", objectFit:"cover" }} />
                 ) : (

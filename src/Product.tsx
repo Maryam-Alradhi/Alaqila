@@ -166,7 +166,7 @@ function Product() {
                       {m.type === "video" ? (
                         <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🎬</div>
                       ) : (
-                        <img src={m.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={m.src} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       )}
                     </div>
                   ))}
